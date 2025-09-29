@@ -60,33 +60,37 @@
                     <p>Key figures refresh instantly as you adjust income and lifestyle draw assumptions.</p>
                 </div>
                 <div class="summary-grid">
-                    <article class="summary-card">
-                        <span class="summary-label">Personal tax load</span>
-                        <span class="summary-value" id="summaryPersonalTax">$0</span>
-                        <span class="summary-sub" id="summaryPersonalRate">0% effective rate</span>
-                    </article>
-                    <article class="summary-card">
-                        <span class="summary-label">Corporate tax load</span>
-                        <span class="summary-value" id="summaryCorpTax">$0</span>
-                        <span class="summary-sub" id="summaryCorpRate">0% effective rate</span>
-                    </article>
-                </div>
-                <div class="summary-details-group">
-                    <details class="summary-details" open>
-                        <summary>Personal tax breakdown</summary>
-                        <ul class="summary-breakdown-list">
-                            <li><span>Federal tax</span><span id="summaryPersonalFederal">$0</span></li>
-                            <li><span>Manitoba tax</span><span id="summaryPersonalProvincial">$0</span></li>
-                            <li><span>CPP contributions</span><span id="summaryPersonalCPP">$0</span></li>
-                            <li><span>EI premiums</span><span id="summaryPersonalEI">$0</span></li>
-                        </ul>
+                    <details class="summary-card personal-card">
+                        <summary>
+                            <div class="summary-main">
+                                <span class="summary-label">Personal tax load</span>
+                                <span class="summary-value" id="summaryPersonalTax">$0</span>
+                            </div>
+                            <span class="summary-sub" id="summaryPersonalRate">0% effective rate</span>
+                        </summary>
+                        <div class="summary-panel">
+                            <ul class="summary-breakdown-list">
+                                <li><span>Federal tax</span><span id="summaryPersonalFederal">$0</span></li>
+                                <li><span>Manitoba tax</span><span id="summaryPersonalProvincial">$0</span></li>
+                                <li><span>CPP contributions</span><span id="summaryPersonalCPP">$0</span></li>
+                                <li><span>EI premiums</span><span id="summaryPersonalEI">$0</span></li>
+                            </ul>
+                        </div>
                     </details>
-                    <details class="summary-details">
-                        <summary>Corporate tax breakdown</summary>
-                        <ul class="summary-breakdown-list">
-                            <li><span>Corporate tax</span><span id="summaryCorporateTax">$0</span></li>
-                            <li><span>Personal tax on salary</span><span id="summaryCorporatePersonalTax">$0</span></li>
-                        </ul>
+                    <details class="summary-card corporate-card">
+                        <summary>
+                            <div class="summary-main">
+                                <span class="summary-label">Corporate tax load</span>
+                                <span class="summary-value" id="summaryCorpTax">$0</span>
+                            </div>
+                            <span class="summary-sub" id="summaryCorpRate">0% effective rate</span>
+                        </summary>
+                        <div class="summary-panel">
+                            <ul class="summary-breakdown-list">
+                                <li><span>Corporate tax</span><span id="summaryCorporateTax">$0</span></li>
+                                <li><span>Personal tax on salary</span><span id="summaryCorporatePersonalTax">$0</span></li>
+                            </ul>
+                        </div>
                     </details>
                 </div>
                 <div id="taxAdvantage" class="advantage">Enter an income amount to see tax comparison</div>
@@ -133,7 +137,7 @@
                             <span class="amount" id="effectivePersonal">0%</span>
                         </div>
                         <div class="tax-details-group">
-                            <details class="tax-details" open>
+                            <details class="tax-details">
                                 <summary>Federal tax by bracket</summary>
                                 <ul id="federalBreakdown" class="tax-breakdown-list">
                                     <li>Enter income to view bracket detail.</li>
@@ -187,7 +191,7 @@
                             <span class="amount" id="effectiveCorp">0%</span>
                         </div>
                         <div class="tax-details-group">
-                            <details class="tax-details" open>
+                            <details class="tax-details">
                                 <summary>Corporate tax detail</summary>
                                 <ul id="corpBreakdown" class="tax-breakdown-list">
                                     <li>Enter income to view corporate tax detail.</li>
