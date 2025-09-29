@@ -291,11 +291,11 @@
             <div class="input-section">
                 <div class="input-group">
                     <label for="grossIncome">Enter Gross Professional Income:</label>
-                    <input type="number" id="grossIncome" placeholder="e.g., 350000" value="350000">
+                    <input type="text" id="grossIncome" placeholder="$350,000" value="$350,000">
                 </div>
                 <div class="input-group">
                     <label for="personalExpenses">Annual Personal Living Expenses (for corporate calculation):</label>
-                    <input type="number" id="personalExpenses" placeholder="e.g., 100000" value="100000">
+                    <input type="text" id="personalExpenses" placeholder="$100,000" value="$100,000">
                 </div>
             </div>
             
@@ -476,9 +476,50 @@
     </div>
     
     <script>
+        function formatInputCurrency(value) {
+            // Remove all non-digit characters
+            const number = value.replace(/[^\d]/g, '');
+            if (!number) return '';
+            
+            // Convert to number and format
+            const amount = parseInt(number);
+            return new Intl.NumberFormat('en-CA', {
+                style: 'currency',
+                currency: 'CAD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+        
+        function parseInputCurrency(value) {
+            // Remove all non-digit characters and convert to number
+            return parseFloat(value.replace(/[^\d]/g, '')) || 0;
+        }
+        
+        function handleInputFormat(inputId) {
+            const input = document.getElementById(inputId);
+            
+            // Store cursor position
+            const cursorPos = input.selectionStart;
+            const oldLength = input.value.length;
+            
+            // Get numeric value
+            const numericValue = parseInputCurrency(input.value);
+            
+            // Format and set the value
+            if (numericValue > 0) {
+                input.value = formatInputCurrency(input.value);
+            }
+            
+            // Adjust cursor position
+            const newLength = input.value.length;
+            const diff = newLength - oldLength;
+            input.setSelectionRange(cursorPos + diff, cursorPos + diff);
+        }
+        
         function calculateTax() {
-            const grossIncome = parseFloat(document.getElementById('grossIncome').value) || 0;
-            const personalExpenses = parseFloat(document.getElementById('personalExpenses').value) || 100000;
+            const grossIncome = parseInputCurrency(document.getElementById('grossIncome').value);
+            const personalExpenses = parseInputCurrency(document.getElementById('personalExpenses').value) || 100000;
             
             // Federal tax brackets 2024
             const federalBrackets = [
@@ -532,7 +573,7 @@
             
             const totalPersonalTax = federalTax + manitobaTax + cpp + ei;
             const netPersonal = grossIncome - totalPersonalTax;
-            const effectivePersonalRate = (totalPersonalTax / grossIncome * 100).toFixed(2);
+            const effectivePersonalRate = grossIncome > 0 ? (totalPersonalTax / grossIncome * 100).toFixed(2) : '0.00';
             
             // Corporate tax calculation
             const corpTaxRate = 0.11; // Small business rate in Manitoba
@@ -551,7 +592,7 @@
             const retained = corpAfterTax - salary;
             const totalCorpTax = corpTax + salaryTax;
             const netCorp = netSalary + retained;
-            const effectiveCorpRate = (totalCorpTax / grossIncome * 100).toFixed(2);
+            const effectiveCorpRate = grossIncome > 0 ? (totalCorpTax / grossIncome * 100).toFixed(2) : '0.00';
             
             // Update UI
             document.getElementById('personalGross').textContent = formatCurrency(grossIncome);
@@ -577,7 +618,10 @@
             const advantage = netCorp - netPersonal;
             const advantageElement = document.getElementById('taxAdvantage');
             
-            if (advantage > 0) {
+            if (grossIncome === 0) {
+                advantageElement.className = 'advantage';
+                advantageElement.innerHTML = 'Enter an income amount to see tax comparison';
+            } else if (advantage > 0) {
                 advantageElement.className = 'advantage corporate';
                 advantageElement.innerHTML = `
                     Corporate structure provides a tax advantage of <strong>${formatCurrency(advantage)}</strong><br>
@@ -601,9 +645,25 @@
             }).format(amount);
         }
         
-        // Calculate on input change
-        document.getElementById('grossIncome').addEventListener('input', calculateTax);
-        document.getElementById('personalExpenses').addEventListener('input', calculateTax);
+        // Add input event listeners with formatting
+        document.getElementById('grossIncome').addEventListener('input', function(e) {
+            handleInputFormat('grossIncome');
+            calculateTax();
+        });
+        
+        document.getElementById('personalExpenses').addEventListener('input', function(e) {
+            handleInputFormat('personalExpenses');
+            calculateTax();
+        });
+        
+        // Handle focus events to select all text for easier editing
+        document.getElementById('grossIncome').addEventListener('focus', function(e) {
+            e.target.select();
+        });
+        
+        document.getElementById('personalExpenses').addEventListener('focus', function(e) {
+            e.target.select();
+        });
         
         // Initial calculation
         calculateTax();
