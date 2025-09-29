@@ -4,390 +4,199 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manitoba Doctor Tax Calculator - Personal vs Corporate</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-        
-        .content {
-            padding: 40px;
-        }
-        
-        .input-section {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-        }
-        
-        .input-group {
-            margin-bottom: 25px;
-        }
-        
-        .input-group label {
-            display: block;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 8px;
-            font-size: 1.1em;
-        }
-        
-        .input-group input {
-            width: 100%;
-            max-width: 400px;
-            padding: 12px 16px;
-            font-size: 1.1em;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .comparison-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-top: 30px;
-        }
-        
-        .tax-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .tax-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-        
-        .tax-card.personal {
-            border-top: 4px solid #28a745;
-        }
-        
-        .tax-card.corporate {
-            border-top: 4px solid #007bff;
-        }
-        
-        .tax-card h2 {
-            color: #343a40;
-            margin-bottom: 20px;
-            font-size: 1.8em;
-        }
-        
-        .tax-line {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .tax-line:last-child {
-            border-bottom: none;
-        }
-        
-        .tax-line.total {
-            font-weight: bold;
-            font-size: 1.2em;
-            margin-top: 10px;
-            padding-top: 20px;
-            border-top: 2px solid #dee2e6;
-        }
-        
-        .tax-line.net-income {
-            color: #28a745;
-            font-size: 1.3em;
-        }
-        
-        .label {
-            color: #6c757d;
-        }
-        
-        .amount {
-            color: #212529;
-            font-weight: 500;
-        }
-        
-        .tax-brackets {
-            margin-top: 40px;
-            padding: 30px;
-            background: #f8f9fa;
-            border-radius: 15px;
-        }
-        
-        .tax-brackets h3 {
-            color: #343a40;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-        
-        .brackets-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .bracket-table {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .bracket-table h4 {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            font-size: 1.2em;
-        }
-        
-        .bracket-table table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .bracket-table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .bracket-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .bracket-table td:first-child {
-            font-weight: 500;
-            color: #495057;
-        }
-        
-        .bracket-table td:last-child {
-            text-align: right;
-            color: #667eea;
-            font-weight: 600;
-        }
-        
-        .summary-section {
-            margin-top: 30px;
-            padding: 25px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 15px;
-        }
-        
-        .summary-section h3 {
-            color: #343a40;
-            margin-bottom: 15px;
-        }
-        
-        .advantage {
-            font-size: 1.3em;
-            font-weight: 600;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            margin-top: 15px;
-        }
-        
-        .advantage.personal {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .advantage.corporate {
-            background: #d1ecf1;
-            color: #004085;
-        }
-        
-        .notes {
-            margin-top: 30px;
-            padding: 20px;
-            background: #fff3cd;
-            border-radius: 10px;
-            border-left: 4px solid #ffc107;
-        }
-        
-        .notes h4 {
-            color: #856404;
-            margin-bottom: 10px;
-        }
-        
-        .notes ul {
-            color: #856404;
-            margin-left: 20px;
-        }
-        
-        .notes li {
-            margin-bottom: 8px;
-        }
-
-        @media (max-width: 768px) {
-            .comparison-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .brackets-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 1.8em;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Manitoba Doctor Tax Calculator</h1>
-            <p>Compare Personal vs. Corporate Tax Structures for Medical Professionals</p>
-        </div>
-        
-        <div class="content">
-            <div class="input-section">
-                <div class="input-group">
-                    <label for="grossIncome">Enter Gross Professional Income:</label>
-                    <input type="text" id="grossIncome" placeholder="$350,000" value="$350,000">
-                </div>
-                <div class="input-group">
-                    <label for="personalExpenses">Annual Personal Living Expenses (for corporate calculation):</label>
-                    <input type="text" id="personalExpenses" placeholder="$100,000" value="$100,000">
-                </div>
-            </div>
-            
-            <div class="comparison-grid">
-                <div class="tax-card personal">
-                    <h2>Personal Income Tax</h2>
-                    <div class="tax-line">
-                        <span class="label">Gross Income:</span>
-                        <span class="amount" id="personalGross">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">Federal Tax:</span>
-                        <span class="amount" id="federalTax">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">Manitoba Tax:</span>
-                        <span class="amount" id="manitobaTax">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">CPP Contributions:</span>
-                        <span class="amount" id="cppContrib">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">EI Premiums:</span>
-                        <span class="amount" id="eiPremium">$0</span>
-                    </div>
-                    <div class="tax-line total">
-                        <span class="label">Total Tax & Deductions:</span>
-                        <span class="amount" id="totalPersonalTax">$0</span>
-                    </div>
-                    <div class="tax-line net-income">
-                        <span class="label">Net After-Tax Income:</span>
-                        <span class="amount" id="netPersonal">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">Effective Tax Rate:</span>
-                        <span class="amount" id="effectivePersonal">0%</span>
+        <header class="header">
+            <div class="header-inner">
+                <div class="header-brand">
+                    <img src="images/WPG-Logo.png" alt="WPG Wealth Planning Group logo">
+                    <div class="brand-text">
+                        <span class="brand-title">WPG Wealth Planning Group</span>
+                        <span class="brand-tagline">Climb Higher. Reach Further.</span>
                     </div>
                 </div>
-                
-                <div class="tax-card corporate">
-                    <h2>Corporate Structure</h2>
-                    <div class="tax-line">
-                        <span class="label">Gross Corporate Income:</span>
-                        <span class="amount" id="corpGross">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">Small Business Tax (11%):</span>
-                        <span class="amount" id="corpTax">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">After-Tax Corporate Income:</span>
-                        <span class="amount" id="corpAfterTax">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">Salary to Self:</span>
-                        <span class="amount" id="corpSalary">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">Personal Tax on Salary:</span>
-                        <span class="amount" id="corpSalaryTax">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">Retained in Corporation:</span>
-                        <span class="amount" id="corpRetained">$0</span>
-                    </div>
-                    <div class="tax-line total">
-                        <span class="label">Total Tax Paid:</span>
-                        <span class="amount" id="totalCorpTax">$0</span>
-                    </div>
-                    <div class="tax-line net-income">
-                        <span class="label">Total After-Tax (Personal + Retained):</span>
-                        <span class="amount" id="netCorp">$0</span>
-                    </div>
-                    <div class="tax-line">
-                        <span class="label">Effective Tax Rate:</span>
-                        <span class="amount" id="effectiveCorp">0%</span>
-                    </div>
+                <div class="header-copy">
+                    <h1>Manitoba Doctor Tax Calculator</h1>
+                    <p>Model personal income versus professional corporation strategies using WPG's physician-focused assumptions.</p>
+                    <span class="header-pill">Updated for 2024 Manitoba tax rates</span>
                 </div>
             </div>
-            
-            <div class="summary-section">
-                <h3>Tax Advantage Analysis</h3>
-                <div id="taxAdvantage" class="advantage"></div>
-            </div>
-            
-            <div class="tax-brackets">
-                <h3>2024 Tax Rate Tables</h3>
-                
+        </header>
+
+        <main class="content">
+            <section class="section-card input-section">
+                <div class="section-heading">
+                    <h2>Income & Lifestyle Inputs</h2>
+                    <p>Adjust the assumptions to reflect the physician's compensation and desired lifestyle draw.</p>
+                </div>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="grossIncome">Gross professional income</label>
+                        <input type="text" id="grossIncome" placeholder="$350,000" value="$350,000">
+                        <span class="input-hint">Include all fee-for-service and contract billings before expenses.</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="personalExpenses">Annual lifestyle draw</label>
+                        <input type="text" id="personalExpenses" placeholder="$100,000" value="$100,000">
+                        <span class="input-hint">Amount you plan to take as salary from the corporation to fund living costs.</span>
+                    </div>
+                </div>
+                <div class="input-controls">
+                    <label class="toggle" for="includeEi">
+                        <input type="checkbox" id="includeEi">
+                        <span class="toggle-display" aria-live="polite">
+                            <strong>EI premiums excluded by default</strong>
+                            <small>Enable if EI premiums should be part of the personal tax projection.</small>
+                        </span>
+                    </label>
+                </div>
+            </section>
+
+            <section class="section-card summary-section">
+                <div class="summary-header">
+                    <h2>Tax Advantage Snapshot</h2>
+                    <p>Key figures refresh instantly as you adjust income and lifestyle draw assumptions.</p>
+                </div>
+                <div class="summary-grid">
+                    <article class="summary-card">
+                        <span class="summary-label">Personal tax load</span>
+                        <span class="summary-value" id="summaryPersonalTax">$0</span>
+                        <span class="summary-sub" id="summaryPersonalRate">0% effective rate</span>
+                    </article>
+                    <article class="summary-card">
+                        <span class="summary-label">Corporate tax load</span>
+                        <span class="summary-value" id="summaryCorpTax">$0</span>
+                        <span class="summary-sub" id="summaryCorpRate">0% effective rate</span>
+                    </article>
+                </div>
+                <div id="taxAdvantage" class="advantage">Enter an income amount to see tax comparison</div>
+            </section>
+
+            <section class="section-card comparison-section">
+                <div class="comparison-header">
+                    <h2>Detailed Tax Comparison</h2>
+                    <p>Review how each structure allocates taxes, salary, and retained earnings.</p>
+                </div>
+                <div class="comparison-grid">
+                    <article class="tax-card personal">
+                        <h3>Personal Income Tax</h3>
+                        <div class="tax-line">
+                            <span class="label">Gross Income:</span>
+                            <span class="amount" id="personalGross">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">Federal Tax:</span>
+                            <span class="amount" id="federalTax">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">Manitoba Tax:</span>
+                            <span class="amount" id="manitobaTax">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">CPP Contributions:</span>
+                            <span class="amount" id="cppContrib">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">EI Premiums:</span>
+                            <span class="amount" id="eiPremium">$0</span>
+                        </div>
+                        <div class="tax-line total">
+                            <span class="label">Total Tax & Deductions:</span>
+                            <span class="amount" id="totalPersonalTax">$0</span>
+                        </div>
+                        <div class="tax-line net-income">
+                            <span class="label">Net After-Tax Income:</span>
+                            <span class="amount" id="netPersonal">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">Effective Tax Rate:</span>
+                            <span class="amount" id="effectivePersonal">0%</span>
+                        </div>
+                        <div class="tax-details-group">
+                            <details class="tax-details" open>
+                                <summary>Federal tax by bracket</summary>
+                                <ul id="federalBreakdown" class="tax-breakdown-list">
+                                    <li>Enter income to view bracket detail.</li>
+                                </ul>
+                            </details>
+                            <details class="tax-details">
+                                <summary>Manitoba tax by bracket</summary>
+                                <ul id="manitobaBreakdown" class="tax-breakdown-list">
+                                    <li>Enter income to view bracket detail.</li>
+                                </ul>
+                            </details>
+                        </div>
+                    </article>
+
+                    <article class="tax-card corporate">
+                        <h3>Professional Corporation</h3>
+                        <div class="tax-line">
+                            <span class="label">Gross Corporate Income:</span>
+                            <span class="amount" id="corpGross">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">Small Business Tax (11%):</span>
+                            <span class="amount" id="corpTax">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">After-Tax Corporate Income:</span>
+                            <span class="amount" id="corpAfterTax">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">Salary to Self:</span>
+                            <span class="amount" id="corpSalary">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">Personal Tax on Salary:</span>
+                            <span class="amount" id="corpSalaryTax">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">Retained in Corporation:</span>
+                            <span class="amount" id="corpRetained">$0</span>
+                        </div>
+                        <div class="tax-line total">
+                            <span class="label">Total Tax Paid:</span>
+                            <span class="amount" id="totalCorpTax">$0</span>
+                        </div>
+                        <div class="tax-line net-income">
+                            <span class="label">Total After-Tax (Personal + Retained):</span>
+                            <span class="amount" id="netCorp">$0</span>
+                        </div>
+                        <div class="tax-line">
+                            <span class="label">Effective Tax Rate:</span>
+                            <span class="amount" id="effectiveCorp">0%</span>
+                        </div>
+                        <div class="tax-details-group">
+                            <details class="tax-details" open>
+                                <summary>Corporate tax detail</summary>
+                                <ul id="corpBreakdown" class="tax-breakdown-list">
+                                    <li>Enter income to view corporate tax detail.</li>
+                                </ul>
+                            </details>
+                            <details class="tax-details">
+                                <summary>Salary federal tax by bracket</summary>
+                                <ul id="corpSalaryFederalBreakdown" class="tax-breakdown-list">
+                                    <li>Adjust income and salary to view bracket detail.</li>
+                                </ul>
+                            </details>
+                            <details class="tax-details">
+                                <summary>Salary Manitoba tax by bracket</summary>
+                                <ul id="corpSalaryProvincialBreakdown" class="tax-breakdown-list">
+                                    <li>Adjust income and salary to view bracket detail.</li>
+                                </ul>
+                            </details>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section-card tax-brackets">
+                <h2>2024 Tax Rate Tables</h2>
                 <div class="brackets-grid">
-                    <div class="bracket-table">
-                        <h4>Federal Tax Brackets</h4>
+                    <article class="bracket-table">
+                        <h3>Federal Tax Brackets</h3>
                         <table>
                             <tr>
                                 <td>Up to $55,867</td>
@@ -410,10 +219,10 @@
                                 <td>33%</td>
                             </tr>
                         </table>
-                    </div>
-                    
-                    <div class="bracket-table">
-                        <h4>Manitoba Tax Brackets</h4>
+                    </article>
+
+                    <article class="bracket-table">
+                        <h3>Manitoba Tax Brackets</h3>
                         <table>
                             <tr>
                                 <td>Up to $47,000</td>
@@ -428,10 +237,10 @@
                                 <td>17.4%</td>
                             </tr>
                         </table>
-                    </div>
-                    
-                    <div class="bracket-table">
-                        <h4>Corporate Tax Rates</h4>
+                    </article>
+
+                    <article class="bracket-table">
+                        <h3>Corporate Tax Rates</h3>
                         <table>
                             <tr>
                                 <td>Small Business (Active)</td>
@@ -442,10 +251,10 @@
                                 <td>50.67%</td>
                             </tr>
                         </table>
-                    </div>
-                    
-                    <div class="bracket-table">
-                        <h4>2024 Contribution Limits</h4>
+                    </article>
+
+                    <article class="bracket-table">
+                        <h3>2024 Contribution Limits</h3>
                         <table>
                             <tr>
                                 <td>CPP Maximum</td>
@@ -456,217 +265,42 @@
                                 <td>$1,049.12</td>
                             </tr>
                         </table>
-                    </div>
+                    </article>
                 </div>
-            </div>
-            
-            <div class="notes">
-                <h4>Important Notes:</h4>
+            </section>
+
+            <section class="section-card notes">
+                <h2>Important Notes</h2>
                 <ul>
-                    <li>This calculator provides estimates based on 2024 tax rates for Manitoba</li>
-                    <li>Corporate calculation assumes eligible small business deduction (11% rate)</li>
-                    <li>Personal tax includes federal tax, Manitoba provincial tax, CPP, and EI</li>
-                    <li>Corporate structure shows tax on salary taken out, with remainder retained in corporation</li>
-                    <li>Additional tax will apply when withdrawing retained earnings as dividends</li>
-                    <li>Consult a tax professional for personalized advice and comprehensive planning</li>
-                    <li>Does not account for potential deductions, RRSP contributions, or other tax planning strategies</li>
+                    <li>This calculator provides estimates based on 2024 tax rates for Manitoba.</li>
+                    <li>Corporate calculation assumes the small business deduction applies (11% rate).</li>
+                    <li>Personal tax includes federal tax, Manitoba provincial tax, CPP, and optional EI.</li>
+                    <li>Corporate scenario shows salary drawn plus retained earnings inside the corporation.</li>
+                    <li>Additional tax applies when distributing retained earnings as dividends.</li>
+                    <li>Consult a tax professional for personalized advice and comprehensive planning.</li>
+                    <li>Calculator does not consider additional deductions, RRSP contributions, or other advanced strategies.</li>
                 </ul>
-            </div>
-        </div>
+            </section>
+
+            <section class="section-card planner-tips">
+                <h2>Planner Insights & Next Steps</h2>
+                <div class="tips-grid">
+                    <article class="tip">
+                        <h3>Optimize remuneration mix</h3>
+                        <p>Blend salary and dividends to manage CPP exposure, RRSP contribution room, and personal marginal rates.</p>
+                    </article>
+                    <article class="tip">
+                        <h3>Fund future goals</h3>
+                        <p>Consider IPPs, corporate class investments, or family trusts to align retained earnings with long-term objectives.</p>
+                    </article>
+                    <article class="tip">
+                        <h3>Stress-test cash flow</h3>
+                        <p>Layer in insurance costs, practice expenses, and planned time off to validate that lifestyle draws remain sustainable.</p>
+                    </article>
+                </div>
+            </section>
+        </main>
     </div>
-    
-    <script>
-        function formatInputCurrency(value) {
-            // Remove all non-digit characters
-            const number = value.replace(/[^\d]/g, '');
-            if (!number) return '';
-            
-            // Convert to number and format
-            const amount = parseInt(number);
-            return new Intl.NumberFormat('en-CA', {
-                style: 'currency',
-                currency: 'CAD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(amount);
-        }
-        
-        function parseInputCurrency(value) {
-            // Remove all non-digit characters and convert to number
-            return parseFloat(value.replace(/[^\d]/g, '')) || 0;
-        }
-        
-        function handleInputFormat(inputId) {
-            const input = document.getElementById(inputId);
-            
-            // Store cursor position
-            const cursorPos = input.selectionStart;
-            const oldLength = input.value.length;
-            
-            // Get numeric value
-            const numericValue = parseInputCurrency(input.value);
-            
-            // Format and set the value
-            if (numericValue > 0) {
-                input.value = formatInputCurrency(input.value);
-            }
-            
-            // Adjust cursor position
-            const newLength = input.value.length;
-            const diff = newLength - oldLength;
-            input.setSelectionRange(cursorPos + diff, cursorPos + diff);
-        }
-        
-        function calculateTax() {
-            const grossIncome = parseInputCurrency(document.getElementById('grossIncome').value);
-            const personalExpenses = parseInputCurrency(document.getElementById('personalExpenses').value) || 100000;
-            
-            // Federal tax brackets 2024
-            const federalBrackets = [
-                { min: 0, max: 55867, rate: 0.15 },
-                { min: 55867, max: 111733, rate: 0.205 },
-                { min: 111733, max: 173205, rate: 0.26 },
-                { min: 173205, max: 246752, rate: 0.29 },
-                { min: 246752, max: Infinity, rate: 0.33 }
-            ];
-            
-            // Manitoba tax brackets 2024
-            const manitobaBrackets = [
-                { min: 0, max: 47000, rate: 0.108 },
-                { min: 47000, max: 100000, rate: 0.1275 },
-                { min: 100000, max: Infinity, rate: 0.174 }
-            ];
-            
-            // Calculate federal tax
-            function calculateBracketTax(income, brackets) {
-                let tax = 0;
-                let remainingIncome = income;
-                
-                for (const bracket of brackets) {
-                    if (remainingIncome <= 0) break;
-                    
-                    const taxableInBracket = Math.min(
-                        remainingIncome,
-                        bracket.max - bracket.min
-                    );
-                    
-                    tax += taxableInBracket * bracket.rate;
-                    remainingIncome -= taxableInBracket;
-                }
-                
-                return tax;
-            }
-            
-            // Personal tax calculation
-            const federalTax = calculateBracketTax(grossIncome, federalBrackets);
-            const manitobaTax = calculateBracketTax(grossIncome, manitobaBrackets);
-            
-            // CPP and EI for 2024
-            const cppMax = 71100;
-            const cppRate = 0.0595;
-            const cppBase = 3500;
-            const cpp = Math.min((grossIncome - cppBase) * cppRate, 7994.40);
-            
-            const eiMax = 63200;
-            const eiRate = 0.0166;
-            const ei = Math.min(grossIncome * eiRate, 1049.12);
-            
-            const totalPersonalTax = federalTax + manitobaTax + cpp + ei;
-            const netPersonal = grossIncome - totalPersonalTax;
-            const effectivePersonalRate = grossIncome > 0 ? (totalPersonalTax / grossIncome * 100).toFixed(2) : '0.00';
-            
-            // Corporate tax calculation
-            const corpTaxRate = 0.11; // Small business rate in Manitoba
-            const corpTax = grossIncome * corpTaxRate;
-            const corpAfterTax = grossIncome - corpTax;
-            
-            // Assume taking salary equal to personal expenses
-            const salary = Math.min(personalExpenses, corpAfterTax);
-            const salaryFederalTax = calculateBracketTax(salary, federalBrackets);
-            const salaryManitobaTax = calculateBracketTax(salary, manitobaBrackets);
-            const salaryCpp = Math.min((salary - cppBase) * cppRate, 7994.40);
-            const salaryEi = Math.min(salary * eiRate, 1049.12);
-            const salaryTax = salaryFederalTax + salaryManitobaTax + salaryCpp + salaryEi;
-            
-            const netSalary = salary - salaryTax;
-            const retained = corpAfterTax - salary;
-            const totalCorpTax = corpTax + salaryTax;
-            const netCorp = netSalary + retained;
-            const effectiveCorpRate = grossIncome > 0 ? (totalCorpTax / grossIncome * 100).toFixed(2) : '0.00';
-            
-            // Update UI
-            document.getElementById('personalGross').textContent = formatCurrency(grossIncome);
-            document.getElementById('federalTax').textContent = formatCurrency(federalTax);
-            document.getElementById('manitobaTax').textContent = formatCurrency(manitobaTax);
-            document.getElementById('cppContrib').textContent = formatCurrency(cpp);
-            document.getElementById('eiPremium').textContent = formatCurrency(ei);
-            document.getElementById('totalPersonalTax').textContent = formatCurrency(totalPersonalTax);
-            document.getElementById('netPersonal').textContent = formatCurrency(netPersonal);
-            document.getElementById('effectivePersonal').textContent = effectivePersonalRate + '%';
-            
-            document.getElementById('corpGross').textContent = formatCurrency(grossIncome);
-            document.getElementById('corpTax').textContent = formatCurrency(corpTax);
-            document.getElementById('corpAfterTax').textContent = formatCurrency(corpAfterTax);
-            document.getElementById('corpSalary').textContent = formatCurrency(salary);
-            document.getElementById('corpSalaryTax').textContent = formatCurrency(salaryTax);
-            document.getElementById('corpRetained').textContent = formatCurrency(retained);
-            document.getElementById('totalCorpTax').textContent = formatCurrency(totalCorpTax);
-            document.getElementById('netCorp').textContent = formatCurrency(netCorp);
-            document.getElementById('effectiveCorp').textContent = effectiveCorpRate + '%';
-            
-            // Tax advantage analysis
-            const advantage = netCorp - netPersonal;
-            const advantageElement = document.getElementById('taxAdvantage');
-            
-            if (grossIncome === 0) {
-                advantageElement.className = 'advantage';
-                advantageElement.innerHTML = 'Enter an income amount to see tax comparison';
-            } else if (advantage > 0) {
-                advantageElement.className = 'advantage corporate';
-                advantageElement.innerHTML = `
-                    Corporate structure provides a tax advantage of <strong>${formatCurrency(advantage)}</strong><br>
-                    You save ${formatCurrency(advantage)} by incorporating (${((advantage/grossIncome)*100).toFixed(1)}% of gross income)
-                `;
-            } else {
-                advantageElement.className = 'advantage personal';
-                advantageElement.innerHTML = `
-                    Personal income structure provides a tax advantage of <strong>${formatCurrency(Math.abs(advantage))}</strong><br>
-                    You save ${formatCurrency(Math.abs(advantage))} by remaining unincorporated (${((Math.abs(advantage)/grossIncome)*100).toFixed(1)}% of gross income)
-                `;
-            }
-        }
-        
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('en-CA', {
-                style: 'currency',
-                currency: 'CAD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(amount);
-        }
-        
-        // Add input event listeners with formatting
-        document.getElementById('grossIncome').addEventListener('input', function(e) {
-            handleInputFormat('grossIncome');
-            calculateTax();
-        });
-        
-        document.getElementById('personalExpenses').addEventListener('input', function(e) {
-            handleInputFormat('personalExpenses');
-            calculateTax();
-        });
-        
-        // Handle focus events to select all text for easier editing
-        document.getElementById('grossIncome').addEventListener('focus', function(e) {
-            e.target.select();
-        });
-        
-        document.getElementById('personalExpenses').addEventListener('focus', function(e) {
-            e.target.select();
-        });
-        
-        // Initial calculation
-        calculateTax();
-    </script>
+    <script src="script/app.js"></script>
 </body>
 </html>
