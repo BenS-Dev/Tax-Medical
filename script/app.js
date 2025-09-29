@@ -20,20 +20,14 @@ const EI_MAX = 1_049.12;
 const SMALL_BUSINESS_RATE = 0.11;
 
 function formatInputCurrency(value) {
-    const digitsOnly = value.replace(/[^\d]/g, '');
+    const digitsOnly = String(value).replace(/[^\d]/g, '');
 
-    if (!digitsOnly) {
+    if (digitsOnly === '') {
         return '';
     }
 
     const amount = Number.parseInt(digitsOnly, 10);
-
-    return new Intl.NumberFormat('en-CA', {
-        style: 'currency',
-        currency: 'CAD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
+    return formatCurrency(amount);
 }
 
 function parseInputCurrency(value) {
@@ -42,16 +36,20 @@ function parseInputCurrency(value) {
 
 function handleInputFormat(inputId) {
     const input = document.getElementById(inputId);
-
     const previousLength = input.value.length;
-    const cursorPosition = input.selectionStart;
-    const numericValue = parseInputCurrency(input.value);
+    const cursorPosition = typeof input.selectionStart === 'number' ? input.selectionStart : previousLength;
+    const digitsOnly = input.value.replace(/[^\d]/g, '');
 
-    if (numericValue > 0) {
-        input.value = formatInputCurrency(input.value);
+    if (digitsOnly === '') {
+        input.value = '';
+        input.setSelectionRange(0, 0);
+        return;
     }
 
-    const newLength = input.value.length;
+    const formatted = formatInputCurrency(digitsOnly);
+    input.value = formatted;
+
+    const newLength = formatted.length;
     const delta = newLength - previousLength;
     const nextCursor = Math.max(0, cursorPosition + delta);
 
@@ -139,13 +137,16 @@ function refreshEiToggleDescription(includeEi) {
 
     strong.textContent = includeEi ? 'EI premiums included in calculation' : 'EI premiums excluded from calculation';
     detail.textContent = includeEi
-        ? 'Uncheck if the physician is EI-exempt (e.g., incorporated owner-manager).'
-        : 'Re-enable if EI premiums should be part of the personal tax projection.';
+        ? 'Disable if the physician is EI-exempt (e.g., incorporated owner-manager).'
+        : 'Enable if EI premiums should be part of the personal tax projection.';
 }
 
 function calculateTax() {
     const grossIncome = parseInputCurrency(document.getElementById('grossIncome').value);
-    const personalExpenses = parseInputCurrency(document.getElementById('personalExpenses').value) || 100_000;
+    const personalExpensesField = document.getElementById('personalExpenses');
+    const personalExpenses = personalExpensesField.value.trim() === ''
+        ? 100_000
+        : parseInputCurrency(personalExpensesField.value);
     const includeEi = document.getElementById('includeEi').checked;
 
     refreshEiToggleDescription(includeEi);
@@ -205,16 +206,35 @@ function calculateTax() {
         salaryProvincialBreakdown: salaryProvincialDetail.breakdown
     });
 
-    updateSummary(totalPersonalTax, effectivePersonalRate, totalCorpTax, effectiveCorpRate);
+    updateSummary({
+        personalTax: totalPersonalTax,
+        personalRate: effectivePersonalRate,
+        personalFederal: personalFederalDetail.total,
+        personalProvincial: personalProvincialDetail.total,
+        personalCPP: cpp,
+        personalEI: ei,
+        corporateTax: totalCorpTax,
+        corporateRate: effectiveCorpRate,
+        corporateCorporateTax: corpTax,
+        corporatePersonalTax: salaryTax
+    });
 
     updateAdvantage(netCorp - netPersonal, grossIncome);
 }
 
-function updateSummary(personalTax, personalRate, corporateTax, corporateRate) {
-    document.getElementById('summaryPersonalTax').textContent = formatCurrency(personalTax);
-    document.getElementById('summaryPersonalRate').textContent = `${personalRate}% effective rate`;
-    document.getElementById('summaryCorpTax').textContent = formatCurrency(corporateTax);
-    document.getElementById('summaryCorpRate').textContent = `${corporateRate}% effective rate`;
+function updateSummary(summary) {
+    document.getElementById('summaryPersonalTax').textContent = formatCurrency(summary.personalTax);
+    document.getElementById('summaryPersonalRate').textContent = `${summary.personalRate}% effective rate`;
+    document.getElementById('summaryCorpTax').textContent = formatCurrency(summary.corporateTax);
+    document.getElementById('summaryCorpRate').textContent = `${summary.corporateRate}% effective rate`;
+
+    document.getElementById('summaryPersonalFederal').textContent = formatCurrency(summary.personalFederal);
+    document.getElementById('summaryPersonalProvincial').textContent = formatCurrency(summary.personalProvincial);
+    document.getElementById('summaryPersonalCPP').textContent = formatCurrency(summary.personalCPP);
+    document.getElementById('summaryPersonalEI').textContent = formatCurrency(summary.personalEI);
+
+    document.getElementById('summaryCorporateTax').textContent = formatCurrency(summary.corporateCorporateTax);
+    document.getElementById('summaryCorporatePersonalTax').textContent = formatCurrency(summary.corporatePersonalTax);
 }
 
 function updatePersonalResults(data) {

@@ -38,9 +38,9 @@
                         <span class="input-hint">Include all fee-for-service and contract billings before expenses.</span>
                     </div>
                     <div class="input-group">
-                        <label for="personalExpenses">Annual lifestyle draw</label>
+                        <label for="personalExpenses">Annual salary from corporation</label>
                         <input type="text" id="personalExpenses" placeholder="$100,000" value="$100,000">
-                        <span class="input-hint">Amount you plan to take as salary from the corporation to fund living costs.</span>
+                        <span class="input-hint">Enter the salary you plan to draw from the corporation. Use 0 to model retaining all profits inside the corporation.</span>
                     </div>
                 </div>
                 <div class="input-controls">
@@ -70,6 +70,24 @@
                         <span class="summary-value" id="summaryCorpTax">$0</span>
                         <span class="summary-sub" id="summaryCorpRate">0% effective rate</span>
                     </article>
+                </div>
+                <div class="summary-details-group">
+                    <details class="summary-details" open>
+                        <summary>Personal tax breakdown</summary>
+                        <ul class="summary-breakdown-list">
+                            <li><span>Federal tax</span><span id="summaryPersonalFederal">$0</span></li>
+                            <li><span>Manitoba tax</span><span id="summaryPersonalProvincial">$0</span></li>
+                            <li><span>CPP contributions</span><span id="summaryPersonalCPP">$0</span></li>
+                            <li><span>EI premiums</span><span id="summaryPersonalEI">$0</span></li>
+                        </ul>
+                    </details>
+                    <details class="summary-details">
+                        <summary>Corporate tax breakdown</summary>
+                        <ul class="summary-breakdown-list">
+                            <li><span>Corporate tax</span><span id="summaryCorporateTax">$0</span></li>
+                            <li><span>Personal tax on salary</span><span id="summaryCorporatePersonalTax">$0</span></li>
+                        </ul>
+                    </details>
                 </div>
                 <div id="taxAdvantage" class="advantage">Enter an income amount to see tax comparison</div>
             </section>

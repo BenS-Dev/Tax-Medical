@@ -315,6 +315,72 @@ body {
     color: var(--wpg-slate);
 }
 
+.summary-details-group {
+    margin-top: clamp(1.25rem, 2vw, 1.75rem);
+    display: grid;
+    gap: clamp(0.85rem, 1.6vw, 1.25rem);
+}
+
+.summary-details {
+    background: rgba(0, 61, 102, 0.05);
+    border: 1px solid rgba(0, 61, 102, 0.12);
+    border-radius: 18px;
+    padding: 0.9rem 1.1rem;
+    transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.summary-details[open] {
+    border-color: var(--wpg-green);
+    background: rgba(0, 103, 51, 0.08);
+}
+
+.summary-details summary {
+    font-weight: 600;
+    color: var(--wpg-blue);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.summary-details summary:focus-visible {
+    outline: 2px solid var(--wpg-green);
+    outline-offset: 4px;
+}
+
+.summary-details summary::marker,
+.summary-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.summary-details summary::after {
+    content: '+';
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.summary-details[open] summary::after {
+    content: '-';
+}
+
+.summary-breakdown-list {
+    margin-top: 0.6rem;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--wpg-slate);
+}
+
+.summary-breakdown-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
 .advantage {
     margin-top: clamp(1.5rem, 2.5vw, 2rem);
     padding: clamp(1.1rem, 2vw, 1.5rem);
