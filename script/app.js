@@ -207,8 +207,27 @@ function calculateTax() {
 
     // Parse overhead percentage
     const overheadPercentField = document.getElementById('overheadPercent');
-    const overheadPercentStr = overheadPercentField ? overheadPercentField.value.replace(/[^\d.]/g, '') : '30';
-    const overheadPercent = parseFloat(overheadPercentStr) || 30;
+    let overheadPercentStr = overheadPercentField ? overheadPercentField.value.replace(/[^\d.]/g, '') : '';
+    let overheadPercent = overheadPercentStr === '' ? 0 : parseFloat(overheadPercentStr);
+
+    // Clamp between 0 and 100
+    if (overheadPercentStr !== '') {
+        overheadPercent = Math.max(0, Math.min(100, overheadPercent));
+    }
+
+    // Format the field to show percentage (preserve cursor position)
+    if (overheadPercentField) {
+        const cursorPosition = overheadPercentField.selectionStart;
+        const oldValue = overheadPercentField.value;
+        const newValue = overheadPercentStr === '' ? '' : `${overheadPercent}%`;
+
+        if (oldValue !== newValue) {
+            overheadPercentField.value = newValue;
+            // Keep cursor before the % sign (or at end if empty)
+            const newCursorPos = newValue === '' ? 0 : Math.min(cursorPosition, newValue.length - 1);
+            overheadPercentField.setSelectionRange(newCursorPos, newCursorPos);
+        }
+    }
 
     // Calculate net income after overhead
     const netIncomeAfterOverhead = grossIncome * (1 - overheadPercent / 100);
