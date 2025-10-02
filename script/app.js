@@ -204,8 +204,23 @@ function calculateTax() {
     const grossIncome = parseInputCurrency(document.getElementById('grossIncome').value);
     const personalExpensesField = document.getElementById('personalExpenses');
     const personalExpenses = personalExpensesField.value.trim() === '' ? 100_000 : parseInputCurrency(personalExpensesField.value);
+
+    // Parse overhead percentage
+    const overheadPercentField = document.getElementById('overheadPercent');
+    const overheadPercentStr = overheadPercentField ? overheadPercentField.value.replace(/[^\d.]/g, '') : '30';
+    const overheadPercent = parseFloat(overheadPercentStr) || 30;
+
+    // Calculate net income after overhead
+    const netIncomeAfterOverhead = grossIncome * (1 - overheadPercent / 100);
+
+    // Update net salary hint
+    const netSalaryHint = document.getElementById('netSalaryHint');
+    if (netSalaryHint) {
+        netSalaryHint.textContent = `Net income after ${overheadPercent}% overhead: ${formatCurrency(netIncomeAfterOverhead)}`;
+    }
+
     const includeEi = document.getElementById('includeEi')?.checked || false;
-    
+
     // Check if selfEmployed toggle exists, default to false if not
     const selfEmployedElement = document.getElementById('selfEmployed');
     const isSelfEmployed = selfEmployedElement ? selfEmployedElement.checked : false;
@@ -215,38 +230,39 @@ function calculateTax() {
 
     // ============================================================
     // CALCULATE CPP AND TAXABLE INCOME (DIFFERENT FOR EACH TYPE)
+    // Use netIncomeAfterOverhead for personal calculations
     // ============================================================
-    
+
     let cpp, taxableIncome;
 
     if (isSelfEmployed) {
         // SELF-EMPLOYED: Pay both employee AND employer portions
-        const cppBasePensionable = Math.max(0, Math.min(grossIncome, CPP_YMPE) - CPP_BASE_EXEMPTION);
+        const cppBasePensionable = Math.max(0, Math.min(netIncomeAfterOverhead, CPP_YMPE) - CPP_BASE_EXEMPTION);
         const cppBase = Math.min(cppBasePensionable * CPP_SELF_EMPLOYED_RATE, CPP_SELF_EMPLOYED_BASE_MAX);
-        
-        const cpp2Pensionable = Math.max(0, Math.min(grossIncome, CPP_YAMPE) - CPP_YMPE);
+
+        const cpp2Pensionable = Math.max(0, Math.min(netIncomeAfterOverhead, CPP_YAMPE) - CPP_YMPE);
         const cpp2 = Math.min(cpp2Pensionable * CPP2_SELF_EMPLOYED_RATE, CPP2_SELF_EMPLOYED_MAX);
-        
+
         cpp = cppBase + cpp2;
-        
+
         // Self-employed deductions: employer half + enhanced portion
         const cppEmployerDeduction = cpp / 2;
         const cppEnhancedDeduction = CPP_ENHANCED_MAX;
-        
-        taxableIncome = grossIncome - cppEmployerDeduction - cppEnhancedDeduction;
-        
+
+        taxableIncome = netIncomeAfterOverhead - cppEmployerDeduction - cppEnhancedDeduction;
+
     } else {
         // EMPLOYEE: Pay only employee portion
-        const cppBasePensionable = Math.max(0, Math.min(grossIncome, CPP_YMPE) - CPP_BASE_EXEMPTION);
+        const cppBasePensionable = Math.max(0, Math.min(netIncomeAfterOverhead, CPP_YMPE) - CPP_BASE_EXEMPTION);
         const cppBase = Math.min(cppBasePensionable * CPP_EMPLOYEE_RATE, CPP_BASE_MAX);
-        
-        const cpp2Pensionable = Math.max(0, Math.min(grossIncome, CPP_YAMPE) - CPP_YMPE);
+
+        const cpp2Pensionable = Math.max(0, Math.min(netIncomeAfterOverhead, CPP_YAMPE) - CPP_YMPE);
         const cpp2 = Math.min(cpp2Pensionable * CPP2_EMPLOYEE_RATE, CPP2_MAX);
         
         cpp = cppBase + cpp2;
         
         // Employee deduction: only enhanced portion
-        taxableIncome = grossIncome - CPP_ENHANCED_MAX;
+        taxableIncome = netIncomeAfterOverhead - CPP_ENHANCED_MAX;
     }
 
     // ============================================================
@@ -321,12 +337,12 @@ function calculateTax() {
     // ============================================================
     // CALCULATE EI AND TOTALS FOR PERSONAL
     // ============================================================
-    
-    const ei = includeEi ? Math.min(grossIncome * EI_RATE, EI_MAX) : 0;
-    
+
+    const ei = includeEi ? Math.min(netIncomeAfterOverhead * EI_RATE, EI_MAX) : 0;
+
     const totalPersonalTax = federalTax + manitobaTax + cpp + ei;
-    const netPersonal = grossIncome - totalPersonalTax;
-    const effectivePersonalRate = grossIncome > 0 ? ((totalPersonalTax / grossIncome) * 100).toFixed(2) : '0.00';
+    const netPersonal = netIncomeAfterOverhead - totalPersonalTax;
+    const effectivePersonalRate = netIncomeAfterOverhead > 0 ? ((totalPersonalTax / netIncomeAfterOverhead) * 100).toFixed(2) : '0.00';
 
     // ============================================================
     // CORPORATE SCENARIO (ALWAYS USES EMPLOYEE CPP)
@@ -418,7 +434,7 @@ function calculateTax() {
     // ============================================================
     
     updatePersonalResults({
-        grossIncome,
+        grossIncome: netIncomeAfterOverhead,
         federalTax,
         provincialTax: manitobaTax,
         cpp,
@@ -537,11 +553,19 @@ document.getElementById('personalExpenses').addEventListener('input', () => {
     calculateTax();
 });
 
+document.getElementById('overheadPercent').addEventListener('input', () => {
+    calculateTax();
+});
+
 document.getElementById('grossIncome').addEventListener('focus', (event) => {
     event.target.select();
 });
 
 document.getElementById('personalExpenses').addEventListener('focus', (event) => {
+    event.target.select();
+});
+
+document.getElementById('overheadPercent').addEventListener('focus', (event) => {
     event.target.select();
 });
 
