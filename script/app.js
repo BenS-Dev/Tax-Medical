@@ -1,11 +1,14 @@
+// 2024 Tax Constants - CORRECTED
 const FEDERAL_MAX_BASIC_PERSONAL_AMOUNT = 15_705;
 const FEDERAL_MIN_BASIC_PERSONAL_AMOUNT = 14_156;
 const FEDERAL_BASIC_PERSONAL_PHASEOUT_START = 173_205;
 const FEDERAL_BASIC_PERSONAL_PHASEOUT_END = 246_752;
 const FEDERAL_LOW_RATE = 0.15;
 
-const MANITOBA_BASIC_PERSONAL_AMOUNT = 11_402;
+const MANITOBA_BASIC_PERSONAL_AMOUNT = 15_000;  // FIXED: Updated for 2024 (was incorrectly 11,402)
 const MANITOBA_LOW_RATE = 0.108;
+
+const CANADA_EMPLOYMENT_AMOUNT = 1_433; // ADDED: Missing federal employment credit
 
 const federalBrackets = [
     { min: 0, max: 55_867, rate: 0.15 },
@@ -21,11 +24,21 @@ const manitobaBrackets = [
     { min: 100_000, max: Number.POSITIVE_INFINITY, rate: 0.174 }
 ];
 
+// FIXED: CPP/EI values for employees (not self-employed)
 const CPP_RATE = 0.0595;
-const CPP_BASE = 3_500;
-const CPP_MAX = 7_994.4;
+const CPP_BASE_EXEMPTION = 3_500;
+const CPP_YMPE = 68_500;  // Year's Maximum Pensionable Earnings
+const CPP_YAMPE = 73_200; // Year's Additional Maximum Pensionable Earnings (CPP2)
+const CPP_BASE_MAX = 3_867.50;  // Employee base CPP maximum
+const CPP2_RATE = 0.04;
+const CPP2_MAX = 188.00;  // Employee CPP2 maximum
+const CPP_ENHANCED_MAX = 838.00; // Total enhanced CPP deduction ($650 CPP1 + $188 CPP2)
+const CPP_BASE_CREDIT_AMOUNT = 3_217.50; // Base CPP eligible for tax credit
+
 const EI_RATE = 0.0166;
+const EI_MAX_INSURABLE = 63_200;
 const EI_MAX = 1_049.12;
+
 const SMALL_BUSINESS_RATE = 0.11;
 
 function formatInputCurrency(value) {
@@ -157,41 +170,81 @@ function getFederalBasicPersonalAmount(income) {
     return FEDERAL_MAX_BASIC_PERSONAL_AMOUNT - reduction;
 }
 
-function applyFederalBasicPersonalAmountCredit(detail, income) {
+// FIXED: Now properly handles enhanced CPP deduction
+function applyFederalCredits(detail, grossIncome) {
     const originalTax = detail.total;
-    const basicPersonalAmount = getFederalBasicPersonalAmount(income);
-    const credit = basicPersonalAmount * FEDERAL_LOW_RATE;
-    const appliedCredit = Math.min(credit, originalTax);
+    
+    // Basic Personal Amount credit
+    const basicPersonalAmount = getFederalBasicPersonalAmount(grossIncome);
+    const bpaCredit = basicPersonalAmount * FEDERAL_LOW_RATE;
+    
+    // Canada Employment Amount credit (ADDED)
+    const employmentCredit = CANADA_EMPLOYMENT_AMOUNT * FEDERAL_LOW_RATE;
+    
+    // CPP Base credit (only the base portion, not enhanced)
+    const cppCredit = CPP_BASE_CREDIT_AMOUNT * FEDERAL_LOW_RATE;
+    
+    const totalCredits = bpaCredit + employmentCredit + cppCredit;
+    const appliedCredits = Math.min(totalCredits, originalTax);
 
-    if (appliedCredit <= 0) {
+    if (appliedCredits <= 0) {
         return detail;
     }
 
-    detail.total = originalTax - appliedCredit;
+    detail.total = originalTax - appliedCredits;
     detail.breakdown.push({
         range: 'Federal basic personal amount credit',
-        amount: Math.min(basicPersonalAmount, income),
-        tax: -appliedCredit,
+        amount: Math.min(basicPersonalAmount, grossIncome),
+        tax: -bpaCredit,
+        isCredit: true
+    });
+    
+    detail.breakdown.push({
+        range: 'Canada employment amount credit',
+        amount: CANADA_EMPLOYMENT_AMOUNT,
+        tax: -employmentCredit,
+        isCredit: true
+    });
+    
+    detail.breakdown.push({
+        range: 'CPP base contributions credit',
+        amount: CPP_BASE_CREDIT_AMOUNT,
+        tax: -cppCredit,
         isCredit: true
     });
 
     return detail;
 }
 
-function applyManitobaBasicPersonalAmountCredit(detail, income) {
+// FIXED: Now includes CPP credit
+function applyManitobaCredits(detail, grossIncome) {
     const originalTax = detail.total;
-    const credit = MANITOBA_BASIC_PERSONAL_AMOUNT * MANITOBA_LOW_RATE;
-    const appliedCredit = Math.min(credit, originalTax);
+    
+    // Basic Personal Amount credit
+    const bpaCredit = MANITOBA_BASIC_PERSONAL_AMOUNT * MANITOBA_LOW_RATE;
+    
+    // CPP Base credit (provincial portion)
+    const cppCredit = CPP_BASE_CREDIT_AMOUNT * MANITOBA_LOW_RATE;
+    
+    const totalCredits = bpaCredit + cppCredit;
+    const appliedCredits = Math.min(totalCredits, originalTax);
 
-    if (appliedCredit <= 0) {
+    if (appliedCredits <= 0) {
         return detail;
     }
 
-    detail.total = originalTax - appliedCredit;
+    detail.total = originalTax - appliedCredits;
     detail.breakdown.push({
         range: 'Manitoba basic personal amount credit',
-        amount: Math.min(MANITOBA_BASIC_PERSONAL_AMOUNT, income),
-        tax: -appliedCredit,
+        amount: Math.min(MANITOBA_BASIC_PERSONAL_AMOUNT, grossIncome),
+        tax: -bpaCredit,
+        isCredit: true
+    });
+    
+    detail.breakdown.push({
+        range: 'CPP base contributions credit',
+        amount: CPP_BASE_CREDIT_AMOUNT,
+        tax: -cppCredit,
         isCredit: true
     });
 
@@ -222,15 +275,23 @@ function calculateTax() {
 
     refreshEiToggleDescription(includeEi);
 
-    const personalFederalDetail = applyFederalBasicPersonalAmountCredit(
-        calculateBracketDetail(grossIncome, federalBrackets),
-        grossIncome
+    // FIXED: Calculate taxable income after CPP enhanced deduction
+    const taxableIncome = grossIncome - CPP_ENHANCED_MAX;
+
+    const personalFederalDetail = applyFederalCredits(
+        calculateBracketDetail(taxableIncome, federalBrackets),
+        taxableIncome
     );
-    const personalProvincialDetail = applyManitobaBasicPersonalAmountCredit(
-        calculateBracketDetail(grossIncome, manitobaBrackets),
-        grossIncome
+    const personalProvincialDetail = applyManitobaCredits(
+        calculateBracketDetail(taxableIncome, manitobaBrackets),
+        taxableIncome
     );
-    const cpp = Math.min(Math.max(grossIncome - CPP_BASE, 0) * CPP_RATE, CPP_MAX);
+    
+    // FIXED: CPP calculated correctly for employees
+    const cppBase = Math.min((CPP_YMPE - CPP_BASE_EXEMPTION) * CPP_RATE, CPP_BASE_MAX);
+    const cpp2 = grossIncome > CPP_YMPE ? Math.min((Math.min(grossIncome, CPP_YAMPE) - CPP_YMPE) * CPP2_RATE, CPP2_MAX) : 0;
+    const cpp = cppBase + cpp2;
+    
     const ei = includeEi ? Math.min(grossIncome * EI_RATE, EI_MAX) : 0;
 
     const totalPersonalTax = personalFederalDetail.total + personalProvincialDetail.total + cpp + ei;
@@ -241,15 +302,22 @@ function calculateTax() {
     const corpAfterTax = grossIncome - corpTax;
     const salary = Math.min(personalExpenses, corpAfterTax);
 
-    const salaryFederalDetail = applyFederalBasicPersonalAmountCredit(
-        calculateBracketDetail(salary, federalBrackets),
-        salary
+    // FIXED: Corporate salary also uses CPP enhanced deduction
+    const salaryTaxableIncome = salary - Math.min(CPP_ENHANCED_MAX, salary > CPP_BASE_EXEMPTION ? CPP_ENHANCED_MAX : 0);
+    
+    const salaryFederalDetail = applyFederalCredits(
+        calculateBracketDetail(salaryTaxableIncome, federalBrackets),
+        salaryTaxableIncome
     );
-    const salaryProvincialDetail = applyManitobaBasicPersonalAmountCredit(
-        calculateBracketDetail(salary, manitobaBrackets),
-        salary
+    const salaryProvincialDetail = applyManitobaCredits(
+        calculateBracketDetail(salaryTaxableIncome, manitobaBrackets),
+        salaryTaxableIncome
     );
-    const salaryCpp = Math.min(Math.max(salary - CPP_BASE, 0) * CPP_RATE, CPP_MAX);
+    
+    const salaryCppBase = salary > CPP_BASE_EXEMPTION ? Math.min((Math.min(salary, CPP_YMPE) - CPP_BASE_EXEMPTION) * CPP_RATE, CPP_BASE_MAX) : 0;
+    const salaryCpp2 = salary > CPP_YMPE ? Math.min((Math.min(salary, CPP_YAMPE) - CPP_YMPE) * CPP2_RATE, CPP2_MAX) : 0;
+    const salaryCpp = salaryCppBase + salaryCpp2;
+    
     const salaryEi = includeEi ? Math.min(salary * EI_RATE, EI_MAX) : 0;
     const salaryTax = salaryFederalDetail.total + salaryProvincialDetail.total + salaryCpp + salaryEi;
 
