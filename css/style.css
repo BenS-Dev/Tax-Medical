@@ -217,6 +217,9 @@ body {
 
 .input-controls {
     margin-top: clamp(1.5rem, 2.5vw, 2rem);
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1rem, 2vw, 2rem);
 }
 
 .toggle {
