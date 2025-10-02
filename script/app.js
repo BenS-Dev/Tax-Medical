@@ -1,3 +1,12 @@
+const FEDERAL_MAX_BASIC_PERSONAL_AMOUNT = 15_705;
+const FEDERAL_MIN_BASIC_PERSONAL_AMOUNT = 14_156;
+const FEDERAL_BASIC_PERSONAL_PHASEOUT_START = 173_205;
+const FEDERAL_BASIC_PERSONAL_PHASEOUT_END = 246_752;
+const FEDERAL_LOW_RATE = 0.15;
+
+const MANITOBA_BASIC_PERSONAL_AMOUNT = 11_402;
+const MANITOBA_LOW_RATE = 0.108;
+
 const federalBrackets = [
     { min: 0, max: 55_867, rate: 0.15 },
     { min: 55_867, max: 111_733, rate: 0.205 },
@@ -122,9 +131,71 @@ function renderBreakdown(elementId, entries) {
 
     listElement.innerHTML = entries
         .map((entry) => {
+            if (entry.isCredit) {
+                const detail = entry.amount ? ` (${formatCurrency(entry.amount)} applied)` : '';
+                return `<li><span>${entry.range}${detail}</span><span>${formatCurrency(entry.tax)}</span></li>`;
+            }
+
             return `<li><span>${entry.range}</span><span>${formatPercent(entry.rate)} on ${formatCurrency(entry.amount)} = ${formatCurrency(entry.tax)}</span></li>`;
         })
         .join('');
+}
+
+function getFederalBasicPersonalAmount(income) {
+    if (income <= FEDERAL_BASIC_PERSONAL_PHASEOUT_START) {
+        return FEDERAL_MAX_BASIC_PERSONAL_AMOUNT;
+    }
+
+    if (income >= FEDERAL_BASIC_PERSONAL_PHASEOUT_END) {
+        return FEDERAL_MIN_BASIC_PERSONAL_AMOUNT;
+    }
+
+    const reductionRange = FEDERAL_BASIC_PERSONAL_PHASEOUT_END - FEDERAL_BASIC_PERSONAL_PHASEOUT_START;
+    const reduction = ((income - FEDERAL_BASIC_PERSONAL_PHASEOUT_START) / reductionRange)
+        * (FEDERAL_MAX_BASIC_PERSONAL_AMOUNT - FEDERAL_MIN_BASIC_PERSONAL_AMOUNT);
+
+    return FEDERAL_MAX_BASIC_PERSONAL_AMOUNT - reduction;
+}
+
+function applyFederalBasicPersonalAmountCredit(detail, income) {
+    const originalTax = detail.total;
+    const basicPersonalAmount = getFederalBasicPersonalAmount(income);
+    const credit = basicPersonalAmount * FEDERAL_LOW_RATE;
+    const appliedCredit = Math.min(credit, originalTax);
+
+    if (appliedCredit <= 0) {
+        return detail;
+    }
+
+    detail.total = originalTax - appliedCredit;
+    detail.breakdown.push({
+        range: 'Federal basic personal amount credit',
+        amount: Math.min(basicPersonalAmount, income),
+        tax: -appliedCredit,
+        isCredit: true
+    });
+
+    return detail;
+}
+
+function applyManitobaBasicPersonalAmountCredit(detail, income) {
+    const originalTax = detail.total;
+    const credit = MANITOBA_BASIC_PERSONAL_AMOUNT * MANITOBA_LOW_RATE;
+    const appliedCredit = Math.min(credit, originalTax);
+
+    if (appliedCredit <= 0) {
+        return detail;
+    }
+
+    detail.total = originalTax - appliedCredit;
+    detail.breakdown.push({
+        range: 'Manitoba basic personal amount credit',
+        amount: Math.min(MANITOBA_BASIC_PERSONAL_AMOUNT, income),
+        tax: -appliedCredit,
+        isCredit: true
+    });
+
+    return detail;
 }
 
 function refreshEiToggleDescription(includeEi) {
@@ -151,8 +222,14 @@ function calculateTax() {
 
     refreshEiToggleDescription(includeEi);
 
-    const personalFederalDetail = calculateBracketDetail(grossIncome, federalBrackets);
-    const personalProvincialDetail = calculateBracketDetail(grossIncome, manitobaBrackets);
+    const personalFederalDetail = applyFederalBasicPersonalAmountCredit(
+        calculateBracketDetail(grossIncome, federalBrackets),
+        grossIncome
+    );
+    const personalProvincialDetail = applyManitobaBasicPersonalAmountCredit(
+        calculateBracketDetail(grossIncome, manitobaBrackets),
+        grossIncome
+    );
     const cpp = Math.min(Math.max(grossIncome - CPP_BASE, 0) * CPP_RATE, CPP_MAX);
     const ei = includeEi ? Math.min(grossIncome * EI_RATE, EI_MAX) : 0;
 
@@ -164,8 +241,14 @@ function calculateTax() {
     const corpAfterTax = grossIncome - corpTax;
     const salary = Math.min(personalExpenses, corpAfterTax);
 
-    const salaryFederalDetail = calculateBracketDetail(salary, federalBrackets);
-    const salaryProvincialDetail = calculateBracketDetail(salary, manitobaBrackets);
+    const salaryFederalDetail = applyFederalBasicPersonalAmountCredit(
+        calculateBracketDetail(salary, federalBrackets),
+        salary
+    );
+    const salaryProvincialDetail = applyManitobaBasicPersonalAmountCredit(
+        calculateBracketDetail(salary, manitobaBrackets),
+        salary
+    );
     const salaryCpp = Math.min(Math.max(salary - CPP_BASE, 0) * CPP_RATE, CPP_MAX);
     const salaryEi = includeEi ? Math.min(salary * EI_RATE, EI_MAX) : 0;
     const salaryTax = salaryFederalDetail.total + salaryProvincialDetail.total + salaryCpp + salaryEi;
