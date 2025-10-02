@@ -195,10 +195,8 @@ function refreshSelfEmployedDescription(isSelfEmployed) {
     const small = selfEmployedToggle.querySelector('small');
 
     if (strong && small) {
-        strong.textContent = isSelfEmployed ? 'Self-employed (unincorporated)' : 'Employee or incorporated';
-        small.textContent = isSelfEmployed
-            ? 'Pays both employee + employer CPP ($8,111 max), no employment credit.'
-            : 'Pays only employee CPP ($4,056 max), gets $1,433 employment credit.';
+        strong.textContent = 'Self-employed';
+        small.textContent = 'Pay double CPP, no employment credit.';
     }
 }
 
