@@ -328,6 +328,34 @@ async function buildReportPdf() {
         y += noteLines.length * 11 + 2;
     });
 
+    // Full disclaimer, taken from the page so the site and the PDF always match
+    const disclaimerParagraphs = Array.from(document.querySelectorAll('#disclaimerText p'))
+        .map((paragraph) => paragraph.textContent.replace(/\s+/g, ' ').trim());
+    if (disclaimerParagraphs.length) {
+        doc.setFontSize(8.5);
+        const wrapped = disclaimerParagraphs.map((paragraph) => doc.splitTextToSize(paragraph, contentWidth - 24));
+        const boxHeight = 40 + wrapped.reduce((total, lines) => total + lines.length * 11 + 6, 0);
+        y += 8;
+        ensureSpace(boxHeight);
+        doc.setDrawColor(...PDF_COLORS.rule);
+        doc.setLineWidth(0.75);
+        doc.roundedRect(margin, y, contentWidth, boxHeight, 6, 6, 'S');
+        let textY = y + 22;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        setColor(PDF_COLORS.ink);
+        doc.text('Important disclaimer', margin + 12, textY);
+        textY += 16;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        setColor(PDF_COLORS.muted);
+        wrapped.forEach((lines) => {
+            doc.text(lines, margin + 12, textY);
+            textY += lines.length * 11 + 6;
+        });
+        y += boxHeight;
+    }
+
     // Footer on every page
     const pageCount = doc.getNumberOfPages();
     for (let page = 1; page <= pageCount; page += 1) {
@@ -335,8 +363,10 @@ async function buildReportPdf() {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         setColor(PDF_COLORS.muted);
-        doc.text('The Wealth Planning Group Inc.', margin, pageHeight - 28);
-        doc.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 28, { align: 'right' });
+        doc.text('The Wealth Planning Group Inc.', margin, pageHeight - 34);
+        doc.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 34, { align: 'right' });
+        doc.setFontSize(7.5);
+        doc.text('For educational purposes only. Not tax, legal or financial advice. Results are estimates and are not guaranteed.', margin, pageHeight - 22);
     }
 
     return { doc, report, fileName: reportFileName(report.date) };

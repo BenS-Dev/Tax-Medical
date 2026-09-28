@@ -704,6 +704,41 @@ dl + .tax-details {
     background: var(--sage);
 }
 
+.compare-note a {
+    color: var(--forest);
+}
+
+/* Disclaimer */
+
+.disclaimer {
+    margin-bottom: clamp(3rem, 6vw, 4.5rem);
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    max-width: 52rem;
+    scroll-margin-top: 1.5rem;
+}
+
+.disclaimer h2 {
+    font-size: 1.0625rem;
+    margin-bottom: 0.75rem;
+}
+
+.disclaimer p {
+    font-size: 0.875rem;
+    color: var(--muted);
+}
+
+.disclaimer p + p {
+    margin-top: 0.6rem;
+}
+
+.disclaimer .privacy-note {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--rule);
+}
+
 /* Footer */
 
 .site-footer {
