@@ -1,21 +1,23 @@
-// 2024 Tax Constants - CORRECTED
-const FEDERAL_MAX_BASIC_PERSONAL_AMOUNT = 15_705;
-const FEDERAL_MIN_BASIC_PERSONAL_AMOUNT = 14_156;
-const FEDERAL_BASIC_PERSONAL_PHASEOUT_START = 173_205;
-const FEDERAL_BASIC_PERSONAL_PHASEOUT_END = 246_752;
-const FEDERAL_LOW_RATE = 0.15;
+// 2026 tax constants
+const FEDERAL_MAX_BASIC_PERSONAL_AMOUNT = 16_452;
+const FEDERAL_MIN_BASIC_PERSONAL_AMOUNT = 14_829;
+const FEDERAL_BASIC_PERSONAL_PHASEOUT_START = 181_440;
+const FEDERAL_BASIC_PERSONAL_PHASEOUT_END = 258_482;
+const FEDERAL_LOW_RATE = 0.14;
 
-const MANITOBA_BASIC_PERSONAL_AMOUNT = 15_000;
+const MANITOBA_BASIC_PERSONAL_AMOUNT = 15_780;
+const MANITOBA_BASIC_PERSONAL_PHASEOUT_START = 200_000;
+const MANITOBA_BASIC_PERSONAL_PHASEOUT_END = 400_000;
 const MANITOBA_LOW_RATE = 0.108;
 
-const CANADA_EMPLOYMENT_AMOUNT = 1_433;
+const CANADA_EMPLOYMENT_AMOUNT = 1_501;
 
 const federalBrackets = [
-    { min: 0, max: 55_867, rate: 0.15 },
-    { min: 55_867, max: 111_733, rate: 0.205 },
-    { min: 111_733, max: 173_205, rate: 0.26 },
-    { min: 173_205, max: 246_752, rate: 0.29 },
-    { min: 246_752, max: Number.POSITIVE_INFINITY, rate: 0.33 }
+    { min: 0, max: 58_523, rate: 0.14 },
+    { min: 58_523, max: 117_045, rate: 0.205 },
+    { min: 117_045, max: 181_440, rate: 0.26 },
+    { min: 181_440, max: 258_482, rate: 0.29 },
+    { min: 258_482, max: Number.POSITIVE_INFINITY, rate: 0.33 }
 ];
 
 const manitobaBrackets = [
@@ -26,31 +28,35 @@ const manitobaBrackets = [
 
 // CPP Constants
 const CPP_BASE_EXEMPTION = 3_500;
-const CPP_YMPE = 68_500;
-const CPP_YAMPE = 73_200;
+const CPP_YMPE = 74_600;
+const CPP_YAMPE = 85_000;
 
-// Employee CPP
+// Employee CPP (5.95% = 4.95% base + 1.00% first enhanced)
 const CPP_EMPLOYEE_RATE = 0.0595;
-const CPP_BASE_MAX = 3_867.50;
+const CPP_BASE_MAX = 4_230.45;
 const CPP2_EMPLOYEE_RATE = 0.04;
-const CPP2_MAX = 188.00;
+const CPP2_MAX = 416.00;
 
 // Self-Employed CPP
 const CPP_SELF_EMPLOYED_RATE = 0.119;
-const CPP_SELF_EMPLOYED_BASE_MAX = 7_735.00;
+const CPP_SELF_EMPLOYED_BASE_MAX = 8_460.90;
 const CPP2_SELF_EMPLOYED_RATE = 0.08;
-const CPP2_SELF_EMPLOYED_MAX = 376.00;
+const CPP2_SELF_EMPLOYED_MAX = 832.00;
 
-// CPP Tax Treatment
-const CPP_ENHANCED_MAX = 838.00;
-const CPP_BASE_CREDIT_AMOUNT = 3_217.50;
+// CPP Tax Treatment: the first enhanced share is deductible, the base share earns a credit
+const CPP_ENHANCED_SHARE = 1 / 5.95;
+const CPP_CREDIT_SHARE = 4.95 / 5.95;
 
 // EI Constants
-const EI_RATE = 0.0166;
-const EI_MAX_INSURABLE = 63_200;
-const EI_MAX = 1_049.12;
+const EI_RATE = 0.0163;
+const EI_MAX_INSURABLE = 68_900;
+const EI_MAX = 1_123.07;
+const EI_EMPLOYER_MULTIPLIER = 1.4;
 
-const SMALL_BUSINESS_RATE = 0.11;
+// Corporate (Manitoba CCPC): federal 9% + Manitoba 0% on the first $500,000, 27% above
+const SMALL_BUSINESS_RATE = 0.09;
+const SMALL_BUSINESS_LIMIT = 500_000;
+const GENERAL_CORPORATE_RATE = 0.27;
 
 function formatInputCurrency(value) {
     const digitsOnly = String(value).replace(/[^\d]/g, '');
@@ -127,7 +133,7 @@ function formatCurrency(amount) {
 }
 
 function formatPercent(rate) {
-    return `${(rate * 100).toFixed(1).replace(/\.0$/, '')}%`;
+    return `${Number((rate * 100).toFixed(2))}%`;
 }
 
 function renderBreakdown(elementId, entries) {
@@ -158,9 +164,216 @@ function getFederalBasicPersonalAmount(income) {
         return FEDERAL_MIN_BASIC_PERSONAL_AMOUNT;
     }
     const reductionRange = FEDERAL_BASIC_PERSONAL_PHASEOUT_END - FEDERAL_BASIC_PERSONAL_PHASEOUT_START;
-    const reduction = ((income - FEDERAL_BASIC_PERSONAL_PHASEOUT_START) / reductionRange) * 
+    const reduction = ((income - FEDERAL_BASIC_PERSONAL_PHASEOUT_START) / reductionRange) *
                       (FEDERAL_MAX_BASIC_PERSONAL_AMOUNT - FEDERAL_MIN_BASIC_PERSONAL_AMOUNT);
     return FEDERAL_MAX_BASIC_PERSONAL_AMOUNT - reduction;
+}
+
+function getManitobaBasicPersonalAmount(income) {
+    if (income <= MANITOBA_BASIC_PERSONAL_PHASEOUT_START) {
+        return MANITOBA_BASIC_PERSONAL_AMOUNT;
+    }
+    if (income >= MANITOBA_BASIC_PERSONAL_PHASEOUT_END) {
+        return 0;
+    }
+    const reductionRange = MANITOBA_BASIC_PERSONAL_PHASEOUT_END - MANITOBA_BASIC_PERSONAL_PHASEOUT_START;
+    const reduction = ((income - MANITOBA_BASIC_PERSONAL_PHASEOUT_START) / reductionRange) * MANITOBA_BASIC_PERSONAL_AMOUNT;
+    return MANITOBA_BASIC_PERSONAL_AMOUNT - reduction;
+}
+
+// Actual CPP contributions on the given income, with the deductible and creditable portions
+function calculateCpp(income, isSelfEmployed) {
+    const cppBasePensionable = Math.max(0, Math.min(income, CPP_YMPE) - CPP_BASE_EXEMPTION);
+    const cpp2Pensionable = Math.max(0, Math.min(income, CPP_YAMPE) - CPP_YMPE);
+
+    if (isSelfEmployed) {
+        // SELF-EMPLOYED: Pay both employee AND employer portions
+        const cppBase = Math.min(cppBasePensionable * CPP_SELF_EMPLOYED_RATE, CPP_SELF_EMPLOYED_BASE_MAX);
+        const cpp2 = Math.min(cpp2Pensionable * CPP2_SELF_EMPLOYED_RATE, CPP2_SELF_EMPLOYED_MAX);
+        const employeeHalf = cppBase / 2;
+
+        return {
+            total: cppBase + cpp2,
+            // Employer half + first enhanced share of the employee half + all of CPP2
+            deduction: employeeHalf + employeeHalf * CPP_ENHANCED_SHARE + cpp2,
+            creditAmount: employeeHalf * CPP_CREDIT_SHARE
+        };
+    }
+
+    // EMPLOYEE: Pay only employee portion
+    const cppBase = Math.min(cppBasePensionable * CPP_EMPLOYEE_RATE, CPP_BASE_MAX);
+    const cpp2 = Math.min(cpp2Pensionable * CPP2_EMPLOYEE_RATE, CPP2_MAX);
+
+    return {
+        total: cppBase + cpp2,
+        deduction: cppBase * CPP_ENHANCED_SHARE + cpp2,
+        creditAmount: cppBase * CPP_CREDIT_SHARE
+    };
+}
+
+function calculateEi(income) {
+    return Math.min(Math.min(income, EI_MAX_INSURABLE) * EI_RATE, EI_MAX);
+}
+
+// Federal and Manitoba tax, CPP and EI on personal (or salary) income
+function calculatePersonalTax(income, { isSelfEmployed, includeEi }) {
+    const cppDetail = calculateCpp(income, isSelfEmployed);
+    const cpp = cppDetail.total;
+    const ei = includeEi ? calculateEi(income) : 0;
+
+    // Net income for BPA phase-outs is income after the CPP deduction
+    const taxableIncome = Math.max(0, income - cppDetail.deduction);
+
+    // ============================================================
+    // FEDERAL TAX
+    // ============================================================
+
+    const federalDetail = calculateBracketDetail(taxableIncome, federalBrackets);
+
+    const federalBPA = getFederalBasicPersonalAmount(taxableIncome);
+    const federalBPACredit = federalBPA * FEDERAL_LOW_RATE;
+    const employmentAmount = isSelfEmployed ? 0 : Math.min(CANADA_EMPLOYMENT_AMOUNT, income);
+    const federalEmploymentCredit = employmentAmount * FEDERAL_LOW_RATE;
+    const federalCPPCredit = cppDetail.creditAmount * FEDERAL_LOW_RATE;
+    const federalEICredit = ei * FEDERAL_LOW_RATE;
+
+    const totalFederalCredits = federalBPACredit + federalEmploymentCredit + federalCPPCredit + federalEICredit;
+    const federalTax = Math.max(0, federalDetail.total - totalFederalCredits);
+
+    const federalBreakdown = [...federalDetail.breakdown];
+    federalBreakdown.push({
+        range: 'Federal basic personal amount credit',
+        amount: federalBPA,
+        tax: -federalBPACredit,
+        isCredit: true
+    });
+
+    if (!isSelfEmployed) {
+        federalBreakdown.push({
+            range: 'Canada employment amount credit',
+            amount: employmentAmount,
+            tax: -federalEmploymentCredit,
+            isCredit: true
+        });
+    }
+
+    federalBreakdown.push({
+        range: 'CPP base contributions credit',
+        amount: cppDetail.creditAmount,
+        tax: -federalCPPCredit,
+        isCredit: true
+    });
+
+    if (ei > 0) {
+        federalBreakdown.push({
+            range: 'EI premiums credit',
+            amount: ei,
+            tax: -federalEICredit,
+            isCredit: true
+        });
+    }
+
+    // ============================================================
+    // MANITOBA TAX
+    // ============================================================
+
+    const manitobaDetail = calculateBracketDetail(taxableIncome, manitobaBrackets);
+
+    const manitobaBPA = getManitobaBasicPersonalAmount(taxableIncome);
+    const manitobaBPACredit = manitobaBPA * MANITOBA_LOW_RATE;
+    const manitobaCPPCredit = cppDetail.creditAmount * MANITOBA_LOW_RATE;
+    const manitobaEICredit = ei * MANITOBA_LOW_RATE;
+
+    const totalManitobaCredits = manitobaBPACredit + manitobaCPPCredit + manitobaEICredit;
+    const manitobaTax = Math.max(0, manitobaDetail.total - totalManitobaCredits);
+
+    const manitobaBreakdown = [...manitobaDetail.breakdown];
+    manitobaBreakdown.push({
+        range: 'Manitoba basic personal amount credit',
+        amount: manitobaBPA,
+        tax: -manitobaBPACredit,
+        isCredit: true
+    });
+
+    manitobaBreakdown.push({
+        range: 'CPP base contributions credit',
+        amount: cppDetail.creditAmount,
+        tax: -manitobaCPPCredit,
+        isCredit: true
+    });
+
+    if (ei > 0) {
+        manitobaBreakdown.push({
+            range: 'EI premiums credit',
+            amount: ei,
+            tax: -manitobaEICredit,
+            isCredit: true
+        });
+    }
+
+    return {
+        cpp,
+        ei,
+        taxableIncome,
+        federalTax,
+        manitobaTax,
+        federalBreakdown,
+        manitobaBreakdown
+    };
+}
+
+// Employer CPP/CPP2 match the employee amounts; employer EI is 1.4x the employee premium
+function calculateEmployerPayroll(salary, includeEi) {
+    const cpp = calculateCpp(salary, false).total;
+    const ei = includeEi ? calculateEi(salary) * EI_EMPLOYER_MULTIPLIER : 0;
+    return { cpp, ei, total: cpp + ei };
+}
+
+// Largest salary (up to the request) the corporation can pay along with employer payroll costs
+function capSalary(requestedSalary, corporateIncome, includeEi) {
+    if (corporateIncome <= 0 || requestedSalary <= 0) return 0;
+
+    const affordable = (salary) => salary + calculateEmployerPayroll(salary, includeEi).total <= corporateIncome;
+    if (affordable(requestedSalary)) return requestedSalary;
+
+    // Salary plus payroll cost rises with salary, so bisect for the affordable limit
+    let low = 0;
+    let high = Math.min(requestedSalary, corporateIncome);
+    for (let i = 0; i < 60; i += 1) {
+        const mid = (low + high) / 2;
+        if (affordable(mid)) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+    return low;
+}
+
+function calculateCorporateTax(taxableIncome) {
+    const smallBusinessIncome = Math.min(taxableIncome, SMALL_BUSINESS_LIMIT);
+    const generalIncome = Math.max(0, taxableIncome - SMALL_BUSINESS_LIMIT);
+    const breakdown = [];
+
+    if (smallBusinessIncome > 0) {
+        breakdown.push({
+            range: `Small business rate (first ${formatCurrency(SMALL_BUSINESS_LIMIT)})`,
+            amount: smallBusinessIncome,
+            tax: smallBusinessIncome * SMALL_BUSINESS_RATE,
+            rate: SMALL_BUSINESS_RATE
+        });
+    }
+    if (generalIncome > 0) {
+        breakdown.push({
+            range: `General rate (over ${formatCurrency(SMALL_BUSINESS_LIMIT)})`,
+            amount: generalIncome,
+            tax: generalIncome * GENERAL_CORPORATE_RATE,
+            rate: GENERAL_CORPORATE_RATE
+        });
+    }
+
+    const total = breakdown.reduce((sum, entry) => sum + entry.tax, 0);
+    return { total, breakdown };
 }
 
 function refreshEiToggleDescription(includeEi, isSelfEmployed) {
@@ -248,210 +461,44 @@ function calculateTax() {
     refreshSelfEmployedDescription(isSelfEmployed);
 
     // ============================================================
-    // CALCULATE CPP AND TAXABLE INCOME (DIFFERENT FOR EACH TYPE)
+    // PERSONAL SCENARIO
     // Use netIncomeAfterOverhead for personal calculations
     // ============================================================
 
-    let cpp, taxableIncome;
-
-    if (isSelfEmployed) {
-        // SELF-EMPLOYED: Pay both employee AND employer portions
-        const cppBasePensionable = Math.max(0, Math.min(netIncomeAfterOverhead, CPP_YMPE) - CPP_BASE_EXEMPTION);
-        const cppBase = Math.min(cppBasePensionable * CPP_SELF_EMPLOYED_RATE, CPP_SELF_EMPLOYED_BASE_MAX);
-
-        const cpp2Pensionable = Math.max(0, Math.min(netIncomeAfterOverhead, CPP_YAMPE) - CPP_YMPE);
-        const cpp2 = Math.min(cpp2Pensionable * CPP2_SELF_EMPLOYED_RATE, CPP2_SELF_EMPLOYED_MAX);
-
-        cpp = cppBase + cpp2;
-
-        // Self-employed deductions: employer half + enhanced portion
-        const cppEmployerDeduction = cpp / 2;
-        const cppEnhancedDeduction = CPP_ENHANCED_MAX;
-
-        taxableIncome = netIncomeAfterOverhead - cppEmployerDeduction - cppEnhancedDeduction;
-
-    } else {
-        // EMPLOYEE: Pay only employee portion
-        const cppBasePensionable = Math.max(0, Math.min(netIncomeAfterOverhead, CPP_YMPE) - CPP_BASE_EXEMPTION);
-        const cppBase = Math.min(cppBasePensionable * CPP_EMPLOYEE_RATE, CPP_BASE_MAX);
-
-        const cpp2Pensionable = Math.max(0, Math.min(netIncomeAfterOverhead, CPP_YAMPE) - CPP_YMPE);
-        const cpp2 = Math.min(cpp2Pensionable * CPP2_EMPLOYEE_RATE, CPP2_MAX);
-        
-        cpp = cppBase + cpp2;
-        
-        // Employee deduction: only enhanced portion
-        taxableIncome = netIncomeAfterOverhead - CPP_ENHANCED_MAX;
-    }
-
-    // ============================================================
-    // CALCULATE FEDERAL TAX
-    // ============================================================
-    
-    const federalDetail = calculateBracketDetail(taxableIncome, federalBrackets);
-    
-    // Federal credits
-    const federalBPA = getFederalBasicPersonalAmount(taxableIncome);
-    const federalBPACredit = federalBPA * FEDERAL_LOW_RATE;
-    const federalEmploymentCredit = isSelfEmployed ? 0 : CANADA_EMPLOYMENT_AMOUNT * FEDERAL_LOW_RATE;
-    const federalCPPCredit = CPP_BASE_CREDIT_AMOUNT * FEDERAL_LOW_RATE;
-    
-    const totalFederalCredits = federalBPACredit + federalEmploymentCredit + federalCPPCredit;
-    const federalTax = Math.max(0, federalDetail.total - totalFederalCredits);
-    
-    // Build federal breakdown
-    const federalBreakdown = [...federalDetail.breakdown];
-    federalBreakdown.push({
-        range: 'Federal basic personal amount credit',
-        amount: federalBPA,
-        tax: -federalBPACredit,
-        isCredit: true
-    });
-    
-    if (!isSelfEmployed) {
-        federalBreakdown.push({
-            range: 'Canada employment amount credit',
-            amount: CANADA_EMPLOYMENT_AMOUNT,
-            tax: -federalEmploymentCredit,
-            isCredit: true
-        });
-    }
-    
-    federalBreakdown.push({
-        range: 'CPP base contributions credit',
-        amount: CPP_BASE_CREDIT_AMOUNT,
-        tax: -federalCPPCredit,
-        isCredit: true
-    });
-
-    // ============================================================
-    // CALCULATE MANITOBA TAX
-    // ============================================================
-    
-    const manitobaDetail = calculateBracketDetail(taxableIncome, manitobaBrackets);
-    
-    // Manitoba credits
-    const manitobaBPACredit = MANITOBA_BASIC_PERSONAL_AMOUNT * MANITOBA_LOW_RATE;
-    const manitobaCPPCredit = CPP_BASE_CREDIT_AMOUNT * MANITOBA_LOW_RATE;
-    
-    const totalManitobaCredits = manitobaBPACredit + manitobaCPPCredit;
-    const manitobaTax = Math.max(0, manitobaDetail.total - totalManitobaCredits);
-    
-    // Build Manitoba breakdown
-    const manitobaBreakdown = [...manitobaDetail.breakdown];
-    manitobaBreakdown.push({
-        range: 'Manitoba basic personal amount credit',
-        amount: MANITOBA_BASIC_PERSONAL_AMOUNT,
-        tax: -manitobaBPACredit,
-        isCredit: true
-    });
-    
-    manitobaBreakdown.push({
-        range: 'CPP base contributions credit',
-        amount: CPP_BASE_CREDIT_AMOUNT,
-        tax: -manitobaCPPCredit,
-        isCredit: true
-    });
-
-    // ============================================================
-    // CALCULATE EI AND TOTALS FOR PERSONAL
-    // ============================================================
-
-    const ei = includeEi ? Math.min(netIncomeAfterOverhead * EI_RATE, EI_MAX) : 0;
+    const personal = calculatePersonalTax(netIncomeAfterOverhead, { isSelfEmployed, includeEi });
+    const { cpp, ei, federalTax, manitobaTax } = personal;
 
     const totalPersonalTax = federalTax + manitobaTax + cpp + ei;
     const netPersonal = netIncomeAfterOverhead - totalPersonalTax;
     const effectivePersonalRate = netIncomeAfterOverhead > 0 ? ((totalPersonalTax / netIncomeAfterOverhead) * 100).toFixed(2) : '0.00';
 
     // ============================================================
-    // CORPORATE SCENARIO (ALWAYS USES EMPLOYEE CPP)
+    // CORPORATE SCENARIO (SALARY IS ALWAYS EMPLOYMENT INCOME)
+    // Overhead is a corporate expense
     // ============================================================
-    
-    const corpTax = grossIncome * SMALL_BUSINESS_RATE;
-    const corpAfterTax = grossIncome - corpTax;
-    const salary = Math.min(personalExpenses, corpAfterTax);
 
-    // Corporate salary is ALWAYS employee (never self-employed)
-    const salaryCppBasePensionable = Math.max(0, Math.min(salary, CPP_YMPE) - CPP_BASE_EXEMPTION);
-    const salaryCppBase = Math.min(salaryCppBasePensionable * CPP_EMPLOYEE_RATE, CPP_BASE_MAX);
-    
-    const salaryCpp2Pensionable = Math.max(0, Math.min(salary, CPP_YAMPE) - CPP_YMPE);
-    const salaryCpp2 = Math.min(salaryCpp2Pensionable * CPP2_EMPLOYEE_RATE, CPP2_MAX);
-    
-    const salaryCpp = salaryCppBase + salaryCpp2;
-    const salaryTaxableIncome = salary - CPP_ENHANCED_MAX;
+    const corpIncome = netIncomeAfterOverhead;
+    const overhead = grossIncome - corpIncome;
+    const salary = capSalary(personalExpenses, corpIncome, includeEi);
+    const employerPayroll = calculateEmployerPayroll(salary, includeEi);
 
-    const salaryFederalDetail = calculateBracketDetail(salaryTaxableIncome, federalBrackets);
-    const salaryProvincialDetail = calculateBracketDetail(salaryTaxableIncome, manitobaBrackets);
+    const corpTaxableIncome = Math.max(0, corpIncome - salary - employerPayroll.total);
+    const corporateTax = calculateCorporateTax(corpTaxableIncome);
+    const corpTax = corporateTax.total;
+    const retained = corpTaxableIncome - corpTax;
 
-    // Corporate salary ALWAYS gets employment credit
-    const salaryFederalBPA = getFederalBasicPersonalAmount(salaryTaxableIncome);
-    const salaryBPACredit = salaryFederalBPA * FEDERAL_LOW_RATE;
-    const salaryEmploymentCredit = CANADA_EMPLOYMENT_AMOUNT * FEDERAL_LOW_RATE;
-    const salaryCPPCredit = CPP_BASE_CREDIT_AMOUNT * FEDERAL_LOW_RATE;
-    
-    const salaryFederalTax = Math.max(0, salaryFederalDetail.total - salaryBPACredit - salaryEmploymentCredit - salaryCPPCredit);
-    
-    const salaryManitobaBPACredit = MANITOBA_BASIC_PERSONAL_AMOUNT * MANITOBA_LOW_RATE;
-    const salaryManitobaCPPCredit = CPP_BASE_CREDIT_AMOUNT * MANITOBA_LOW_RATE;
-    
-    const salaryManitobaTax = Math.max(0, salaryProvincialDetail.total - salaryManitobaBPACredit - salaryManitobaCPPCredit);
+    const salaryResult = calculatePersonalTax(salary, { isSelfEmployed: false, includeEi });
+    const salaryIncomeTax = salaryResult.federalTax + salaryResult.manitobaTax;
+    const salaryPayroll = salaryResult.cpp + salaryResult.ei;
 
-    // Build salary breakdowns
-    const salaryFederalBreakdown = [...salaryFederalDetail.breakdown];
-    salaryFederalBreakdown.push({
-        range: 'Federal basic personal amount credit',
-        amount: salaryFederalBPA,
-        tax: -salaryBPACredit,
-        isCredit: true
-    });
-    salaryFederalBreakdown.push({
-        range: 'Canada employment amount credit',
-        amount: CANADA_EMPLOYMENT_AMOUNT,
-        tax: -salaryEmploymentCredit,
-        isCredit: true
-    });
-    salaryFederalBreakdown.push({
-        range: 'CPP base contributions credit',
-        amount: CPP_BASE_CREDIT_AMOUNT,
-        tax: -salaryCPPCredit,
-        isCredit: true
-    });
-
-    const salaryProvincialBreakdown = [...salaryProvincialDetail.breakdown];
-    salaryProvincialBreakdown.push({
-        range: 'Manitoba basic personal amount credit',
-        amount: MANITOBA_BASIC_PERSONAL_AMOUNT,
-        tax: -salaryManitobaBPACredit,
-        isCredit: true
-    });
-    salaryProvincialBreakdown.push({
-        range: 'CPP base contributions credit',
-        amount: CPP_BASE_CREDIT_AMOUNT,
-        tax: -salaryManitobaCPPCredit,
-        isCredit: true
-    });
-
-    const salaryEi = includeEi ? Math.min(salary * EI_RATE, EI_MAX) : 0;
-    const salaryTax = salaryFederalTax + salaryManitobaTax + salaryCpp + salaryEi;
-
-    const netSalary = salary - salaryTax;
-    const retained = corpAfterTax - salary;
-    const totalCorpTax = corpTax + salaryTax;
-    const netCorp = netSalary + retained;
-    const effectiveCorpRate = grossIncome > 0 ? ((totalCorpTax / grossIncome) * 100).toFixed(2) : '0.00';
-
-    const corporateBreakdown = grossIncome > 0 ? [{ 
-        range: 'Active business income', 
-        amount: grossIncome, 
-        tax: corpTax, 
-        rate: SMALL_BUSINESS_RATE 
-    }] : [];
+    const totalCorpTax = corpTax + salaryIncomeTax + salaryPayroll + employerPayroll.total;
+    const netCorp = salary - salaryIncomeTax - salaryPayroll + retained;
+    const effectiveCorpRate = corpIncome > 0 ? ((totalCorpTax / corpIncome) * 100).toFixed(2) : '0.00';
 
     // ============================================================
     // UPDATE UI
     // ============================================================
-    
+
     updatePersonalResults({
         grossIncome: netIncomeAfterOverhead,
         federalTax,
@@ -461,23 +508,26 @@ function calculateTax() {
         totalPersonalTax,
         netPersonal,
         effectivePersonalRate,
-        federalBreakdown,
-        provincialBreakdown: manitobaBreakdown
+        federalBreakdown: personal.federalBreakdown,
+        provincialBreakdown: personal.manitobaBreakdown
     });
 
     updateCorporateResults({
         grossIncome,
-        corpTax,
-        corpAfterTax,
+        overhead,
         salary,
-        salaryTax,
+        employerPayroll: employerPayroll.total,
+        corpTaxableIncome,
+        corpTax,
+        salaryTax: salaryIncomeTax,
+        salaryPayroll,
         retained,
         totalCorpTax,
         netCorp,
         effectiveCorpRate,
-        corpBreakdown: corporateBreakdown,
-        salaryFederalBreakdown,
-        salaryProvincialBreakdown
+        corpBreakdown: corporateTax.breakdown,
+        salaryFederalBreakdown: salaryResult.federalBreakdown,
+        salaryProvincialBreakdown: salaryResult.manitobaBreakdown
     });
 
     updateSummary({
@@ -490,7 +540,8 @@ function calculateTax() {
         corporateTax: totalCorpTax,
         corporateRate: effectiveCorpRate,
         corporateCorporateTax: corpTax,
-        corporatePersonalTax: salaryTax
+        corporatePersonalTax: salaryIncomeTax,
+        corporatePayroll: salaryPayroll + employerPayroll.total
     });
 
     updateAdvantage(netCorp - netPersonal, grossIncome);
@@ -507,6 +558,12 @@ function updateSummary(summary) {
     document.getElementById('summaryPersonalEI').textContent = formatCurrency(summary.personalEI);
     document.getElementById('summaryCorporateTax').textContent = formatCurrency(summary.corporateCorporateTax);
     document.getElementById('summaryCorporatePersonalTax').textContent = formatCurrency(summary.corporatePersonalTax);
+    document.getElementById('summaryCorporatePayroll').textContent = formatCurrency(summary.corporatePayroll);
+
+    const largestTax = Math.max(summary.personalTax, summary.corporateTax);
+    const barWidth = (value) => (largestTax > 0 ? `${(value / largestTax) * 100}%` : '0%');
+    document.getElementById('barPersonal').style.width = barWidth(summary.personalTax);
+    document.getElementById('barCorp').style.width = barWidth(summary.corporateTax);
 }
 
 function updatePersonalResults(data) {
@@ -524,10 +581,13 @@ function updatePersonalResults(data) {
 
 function updateCorporateResults(data) {
     document.getElementById('corpGross').textContent = formatCurrency(data.grossIncome);
-    document.getElementById('corpTax').textContent = formatCurrency(data.corpTax);
-    document.getElementById('corpAfterTax').textContent = formatCurrency(data.corpAfterTax);
+    document.getElementById('corpOverhead').textContent = formatCurrency(data.overhead);
     document.getElementById('corpSalary').textContent = formatCurrency(data.salary);
+    document.getElementById('corpEmployerPayroll').textContent = formatCurrency(data.employerPayroll);
+    document.getElementById('corpTaxable').textContent = formatCurrency(data.corpTaxableIncome);
+    document.getElementById('corpTax').textContent = formatCurrency(data.corpTax);
     document.getElementById('corpSalaryTax').textContent = formatCurrency(data.salaryTax);
+    document.getElementById('corpSalaryPayroll').textContent = formatCurrency(data.salaryPayroll);
     document.getElementById('corpRetained').textContent = formatCurrency(data.retained);
     document.getElementById('totalCorpTax').textContent = formatCurrency(data.totalCorpTax);
     document.getElementById('netCorp').textContent = formatCurrency(data.netCorp);
@@ -541,22 +601,26 @@ function updateAdvantage(advantage, grossIncome) {
     const advantageElement = document.getElementById('taxAdvantage');
     if (grossIncome === 0) {
         advantageElement.className = 'advantage';
-        advantageElement.textContent = 'Enter an income amount to see tax comparison';
+        advantageElement.textContent = 'Enter your gross income to see which structure comes out ahead.';
         return;
     }
+
+    const saving = Math.abs(advantage);
+    const shareOfGross = ((saving / grossIncome) * 100).toFixed(1);
 
     if (advantage > 0) {
         advantageElement.className = 'advantage corporate';
         advantageElement.innerHTML = `
-            <strong>Corporate structure provides a tax advantage of ${formatCurrency(advantage)}</strong>
-            You save ${formatCurrency(advantage)} by incorporating (${((advantage / grossIncome) * 100).toFixed(1)}% of gross income)
+            <span class="advantage-lead">Incorporating leaves you with</span>
+            <strong>${formatCurrency(saving)} <span class="nowrap">more a year</span></strong>
+            <span class="advantage-detail">That's ${shareOfGross}% of gross income, counting take-home pay plus earnings retained in the corporation.</span>
         `;
     } else {
-        const personalAdvantage = Math.abs(advantage);
         advantageElement.className = 'advantage personal';
         advantageElement.innerHTML = `
-            <strong>Personal income structure provides a tax advantage of ${formatCurrency(personalAdvantage)}</strong>
-            You save ${formatCurrency(personalAdvantage)} by remaining unincorporated (${((personalAdvantage / grossIncome) * 100).toFixed(1)}% of gross income)
+            <span class="advantage-lead">Staying unincorporated leaves you with</span>
+            <strong>${formatCurrency(saving)} <span class="nowrap">more a year</span></strong>
+            <span class="advantage-detail">That's ${shareOfGross}% of gross income compared with running it through a corporation.</span>
         `;
     }
 }

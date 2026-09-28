@@ -3,52 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manitoba Doctor Tax Calculator - Personal vs Corporate</title>
+    <title>Manitoba Physician Tax Calculator | WPG</title>
+    <meta name="description" content="Compare personal income and professional corporation taxes for Manitoba physicians, using 2026 rates.">
+    <link rel="icon" href="images/W.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="header-inner">
-                <div class="header-brand">
-                    <img src="images/WPG-Logo.png" alt="WPG Wealth Planning Group logo">
-                    <div class="brand-text">
-                        <span class="brand-title">WPG Wealth Planning Group</span>
-                        <span class="brand-tagline">Climb Higher. Reach Further.</span>
-                    </div>
-                </div>
-                <div class="header-copy">
-                    <h1>Manitoba Doctor Tax Calculator</h1>
-                    <p>Model personal income versus professional corporation strategies using WPG's physician-focused assumptions.</p>
-                    <span class="header-pill">Updated for 2025 Manitoba tax rates</span>
-                </div>
-            </div>
-        </header>
+    <header class="site-header">
+        <div class="wrap site-header-inner">
+            <img class="logo" src="images/WPG Horiz - WHITE.svg" alt="The Wealth Planning Group Inc." width="230" height="49">
+            <span class="rates-badge">2026 Manitoba rates</span>
+        </div>
+    </header>
 
-        <main class="content">
-            <section class="section-card input-section">
-                <div class="section-heading">
-                    <h2>Income & Lifestyle Inputs</h2>
-                    <p>Adjust the assumptions to reflect the physician's compensation and desired lifestyle draw.</p>
+    <main class="wrap">
+        <div class="intro">
+            <h1>Should your practice be incorporated?</h1>
+            <p>Compare what you'd pay earning personally against running your billings through a professional corporation. Figures update as you type.</p>
+        </div>
+
+        <div class="calculator">
+            <section class="inputs" aria-labelledby="inputsHeading">
+                <h2 id="inputsHeading">Your numbers</h2>
+
+                <div class="field">
+                    <label for="grossIncome">Gross professional income</label>
+                    <input type="text" id="grossIncome" inputmode="decimal" placeholder="$350,000" value="$350,000">
+                    <span class="hint">Fee-for-service and contract billings, before expenses.</span>
                 </div>
-                <div class="input-grid">
-                    <div class="input-group">
-                        <label for="grossIncome">Gross professional income</label>
-                        <input type="text" id="grossIncome" placeholder="$350,000" value="$350,000">
-                        <span class="input-hint">Include all fee-for-service and contract billings before expenses.</span>
-                    </div>
-                    <div class="input-group">
-                        <label for="personalExpenses">Annual salary from corporation</label>
-                        <input type="text" id="personalExpenses" placeholder="$100,000" value="$100,000">
-                        <span class="input-hint">Enter the salary you plan to draw from the corporation. Use 0 to model retaining all profits inside the corporation.</span>
-                    </div>
-                    <div class="input-group">
-                        <label for="overheadPercent">Overhead percentage</label>
-                        <input type="text" id="overheadPercent" placeholder="30%" value="30%">
-                        <span class="input-hint" id="netSalaryHint">Net salary after overhead: $0</span>
-                    </div>
+                <div class="field">
+                    <label for="personalExpenses">Salary drawn from the corporation</label>
+                    <input type="text" id="personalExpenses" inputmode="decimal" placeholder="$100,000" value="$100,000">
+                    <span class="hint">Use $0 to keep all profit inside the corporation.</span>
                 </div>
-                <div class="input-controls">
+                <div class="field">
+                    <label for="overheadPercent">Overhead</label>
+                    <input type="text" id="overheadPercent" inputmode="decimal" placeholder="30%" value="30%">
+                    <span class="hint" id="netSalaryHint">Net salary after overhead: $0</span>
+                </div>
+
+                <div class="switches">
                     <label class="toggle" for="includeEi">
                         <input type="checkbox" id="includeEi">
                         <span class="toggle-display" aria-live="polite">
@@ -66,89 +63,64 @@
                 </div>
             </section>
 
-            <section class="section-card summary-section">
-                <div class="summary-header">
-                    <h2>Tax Advantage Snapshot</h2>
-                    <p>Key figures refresh instantly as you adjust income and lifestyle draw assumptions.</p>
-                </div>
-                <div class="summary-grid">
-                    <details class="summary-card personal-card">
-                        <summary>
-                            <div class="summary-main">
-                                <span class="summary-label">Personal tax load</span>
+            <div class="results">
+                <section class="verdict" aria-live="polite">
+                    <div id="taxAdvantage" class="advantage">Enter your gross income to see which structure comes out ahead.</div>
+
+                    <div class="compare" role="group" aria-label="Total tax under each structure">
+                        <details class="summary-card personal-card">
+                            <summary>
+                                <span class="summary-label">Earning personally</span>
                                 <span class="summary-value" id="summaryPersonalTax">$0</span>
-                            </div>
-                            <span class="summary-sub" id="summaryPersonalRate">0% effective rate</span>
-                        </summary>
-                        <div class="summary-panel">
+                                <span class="bar"><span class="bar-fill" id="barPersonal"></span></span>
+                                <span class="summary-sub" id="summaryPersonalRate">0% effective rate</span>
+                            </summary>
                             <ul class="summary-breakdown-list">
                                 <li><span>Federal tax</span><span id="summaryPersonalFederal">$0</span></li>
                                 <li><span>Manitoba tax</span><span id="summaryPersonalProvincial">$0</span></li>
                                 <li><span>CPP contributions</span><span id="summaryPersonalCPP">$0</span></li>
                                 <li><span>EI premiums</span><span id="summaryPersonalEI">$0</span></li>
                             </ul>
-                        </div>
-                    </details>
-                    <details class="summary-card corporate-card">
-                        <summary>
-                            <div class="summary-main">
-                                <span class="summary-label">Corporate tax load</span>
+                        </details>
+                        <details class="summary-card corporate-card">
+                            <summary>
+                                <span class="summary-label">Through a corporation</span>
                                 <span class="summary-value" id="summaryCorpTax">$0</span>
-                            </div>
-                            <span class="summary-sub" id="summaryCorpRate">0% effective rate</span>
-                        </summary>
-                        <div class="summary-panel">
+                                <span class="bar"><span class="bar-fill" id="barCorp"></span></span>
+                                <span class="summary-sub" id="summaryCorpRate">0% effective rate</span>
+                            </summary>
                             <ul class="summary-breakdown-list">
                                 <li><span>Corporate tax</span><span id="summaryCorporateTax">$0</span></li>
                                 <li><span>Personal tax on salary</span><span id="summaryCorporatePersonalTax">$0</span></li>
+                                <li><span>CPP and EI (employee + employer)</span><span id="summaryCorporatePayroll">$0</span></li>
                             </ul>
-                        </div>
-                    </details>
-                </div>
-                <div id="taxAdvantage" class="advantage">Enter an income amount to see tax comparison</div>
-            </section>
+                        </details>
+                    </div>
+                    <p class="compare-note">Bars show total tax paid each year. Open either one for the breakdown.</p>
 
-            <section class="section-card comparison-section">
-                <div class="comparison-header">
-                    <h2>Detailed Tax Comparison</h2>
-                    <p>Review how each structure allocates taxes, salary, and retained earnings.</p>
-                </div>
-                <div class="comparison-grid">
-                    <article class="tax-card personal">
-                        <h3>Personal Income Tax</h3>
-                        <div class="tax-line">
-                            <span class="label">Gross Income:</span>
-                            <span class="amount" id="personalGross">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">Federal Tax:</span>
-                            <span class="amount" id="federalTax">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">Manitoba Tax:</span>
-                            <span class="amount" id="manitobaTax">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">CPP Contributions:</span>
-                            <span class="amount" id="cppContrib">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">EI Premiums:</span>
-                            <span class="amount" id="eiPremium">$0</span>
-                        </div>
-                        <div class="tax-line total">
-                            <span class="label">Total Tax & Deductions:</span>
-                            <span class="amount" id="totalPersonalTax">$0</span>
-                        </div>
-                        <div class="tax-line net-income">
-                            <span class="label">Net After-Tax Income:</span>
-                            <span class="amount" id="netPersonal">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">Effective Tax Rate:</span>
-                            <span class="amount" id="effectivePersonal">0%</span>
-                        </div>
-                        <div class="tax-details-group">
+                    <div class="report-actions">
+                        <button type="button" class="button primary" id="downloadPdf">Download PDF</button>
+                        <button type="button" class="button" id="sharePdf">Share PDF</button>
+                        <button type="button" class="button" id="emailPdf">Email to WPG</button>
+                    </div>
+                    <p class="report-status" id="reportStatus" role="status"></p>
+                </section>
+
+                <section class="statements" aria-labelledby="statementsHeading">
+                    <h2 id="statementsHeading">Line by line</h2>
+                    <div class="statement-grid">
+                        <article class="statement personal">
+                            <h3>Personal income</h3>
+                            <dl>
+                                <div class="line"><dt>Gross income</dt><dd id="personalGross">$0</dd></div>
+                                <div class="line"><dt>Federal tax</dt><dd id="federalTax">$0</dd></div>
+                                <div class="line"><dt>Manitoba tax</dt><dd id="manitobaTax">$0</dd></div>
+                                <div class="line"><dt>CPP contributions</dt><dd id="cppContrib">$0</dd></div>
+                                <div class="line"><dt>EI premiums</dt><dd id="eiPremium">$0</dd></div>
+                                <div class="line total"><dt>Total tax and deductions</dt><dd id="totalPersonalTax">$0</dd></div>
+                                <div class="line net"><dt>Take-home</dt><dd id="netPersonal">$0</dd></div>
+                                <div class="line rate"><dt>Effective tax rate</dt><dd id="effectivePersonal">0%</dd></div>
+                            </dl>
                             <details class="tax-details">
                                 <summary>Federal tax by bracket</summary>
                                 <ul id="federalBreakdown" class="tax-breakdown-list">
@@ -161,48 +133,24 @@
                                     <li>Enter income to view bracket detail.</li>
                                 </ul>
                             </details>
-                        </div>
-                    </article>
+                        </article>
 
-                    <article class="tax-card corporate">
-                        <h3>Professional Corporation</h3>
-                        <div class="tax-line">
-                            <span class="label">Gross Corporate Income:</span>
-                            <span class="amount" id="corpGross">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">Small Business Tax (11%):</span>
-                            <span class="amount" id="corpTax">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">After-Tax Corporate Income:</span>
-                            <span class="amount" id="corpAfterTax">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">Salary to Self:</span>
-                            <span class="amount" id="corpSalary">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">Personal Tax on Salary:</span>
-                            <span class="amount" id="corpSalaryTax">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">Retained in Corporation:</span>
-                            <span class="amount" id="corpRetained">$0</span>
-                        </div>
-                        <div class="tax-line total">
-                            <span class="label">Total Tax Paid:</span>
-                            <span class="amount" id="totalCorpTax">$0</span>
-                        </div>
-                        <div class="tax-line net-income">
-                            <span class="label">Total After-Tax (Personal + Retained):</span>
-                            <span class="amount" id="netCorp">$0</span>
-                        </div>
-                        <div class="tax-line">
-                            <span class="label">Effective Tax Rate:</span>
-                            <span class="amount" id="effectiveCorp">0%</span>
-                        </div>
-                        <div class="tax-details-group">
+                        <article class="statement corporate">
+                            <h3>Professional corporation</h3>
+                            <dl>
+                                <div class="line"><dt>Gross corporate income</dt><dd id="corpGross">$0</dd></div>
+                                <div class="line"><dt>Overhead</dt><dd id="corpOverhead">$0</dd></div>
+                                <div class="line"><dt>Salary to you</dt><dd id="corpSalary">$0</dd></div>
+                                <div class="line"><dt>Employer CPP and EI</dt><dd id="corpEmployerPayroll">$0</dd></div>
+                                <div class="line"><dt>Corporate taxable income</dt><dd id="corpTaxable">$0</dd></div>
+                                <div class="line"><dt>Corporate tax</dt><dd id="corpTax">$0</dd></div>
+                                <div class="line"><dt>Personal tax on salary</dt><dd id="corpSalaryTax">$0</dd></div>
+                                <div class="line"><dt>Your CPP and EI on salary</dt><dd id="corpSalaryPayroll">$0</dd></div>
+                                <div class="line"><dt>Retained in corporation</dt><dd id="corpRetained">$0</dd></div>
+                                <div class="line total"><dt>Total tax paid</dt><dd id="totalCorpTax">$0</dd></div>
+                                <div class="line net"><dt>Take-home plus retained</dt><dd id="netCorp">$0</dd></div>
+                                <div class="line rate"><dt>Effective tax rate</dt><dd id="effectiveCorp">0%</dd></div>
+                            </dl>
                             <details class="tax-details">
                                 <summary>Corporate tax detail</summary>
                                 <ul id="corpBreakdown" class="tax-breakdown-list">
@@ -221,130 +169,87 @@
                                     <li>Adjust income and salary to view bracket detail.</li>
                                 </ul>
                             </details>
-                        </div>
-                    </article>
-                </div>
-            </section>
+                        </article>
+                    </div>
+                </section>
+            </div>
+        </div>
 
-            <section class="section-card tax-brackets">
-                <h2>2025 Tax Rate Tables</h2>
-                <div class="brackets-grid">
-                    <article class="bracket-table">
-                        <h3>Federal Tax Brackets</h3>
-                        <table>
-                            <tr>
-                                <td>Up to $55,867</td>
-                                <td>15%</td>
-                            </tr>
-                            <tr>
-                                <td>$55,867 - $111,733</td>
-                                <td>20.5%</td>
-                            </tr>
-                            <tr>
-                                <td>$111,733 - $173,205</td>
-                                <td>26%</td>
-                            </tr>
-                            <tr>
-                                <td>$173,205 - $246,752</td>
-                                <td>29%</td>
-                            </tr>
-                            <tr>
-                                <td>Over $246,752</td>
-                                <td>33%</td>
-                            </tr>
-                        </table>
-                        <p class="table-note">Federal basic personal amount credit: $15,705 (phased out for net income above $173,205).</p>
-                    </article>
+        <section class="reference" aria-labelledby="ratesHeading">
+            <h2 id="ratesHeading">The rates behind the numbers</h2>
+            <div class="rate-grid">
+                <table>
+                    <caption>Federal brackets</caption>
+                    <tr><td>Up to $58,523</td><td>14%</td></tr>
+                    <tr><td>$58,523 to $117,045</td><td>20.5%</td></tr>
+                    <tr><td>$117,045 to $181,440</td><td>26%</td></tr>
+                    <tr><td>$181,440 to $258,482</td><td>29%</td></tr>
+                    <tr><td>Over $258,482</td><td>33%</td></tr>
+                </table>
+                <table>
+                    <caption>Manitoba brackets</caption>
+                    <tr><td>Up to $47,000</td><td>10.8%</td></tr>
+                    <tr><td>$47,000 to $100,000</td><td>12.75%</td></tr>
+                    <tr><td>Over $100,000</td><td>17.4%</td></tr>
+                </table>
+                <table>
+                    <caption>Corporate rates</caption>
+                    <tr><td>Small business (first $500,000)</td><td>9%</td></tr>
+                    <tr><td>General (active, over $500,000)</td><td>27%</td></tr>
+                    <tr><td>Investment income</td><td>50.67%</td></tr>
+                </table>
+                <table>
+                    <caption>2026 contribution maximums</caption>
+                    <tr><td>CPP employee base</td><td>$4,230.45</td></tr>
+                    <tr><td>CPP employee CPP2</td><td>$416.00</td></tr>
+                    <tr><td>CPP self-employed</td><td>$8,460.90</td></tr>
+                    <tr><td>EI employee</td><td>$1,123.07</td></tr>
+                </table>
+            </div>
+            <p class="table-note">Basic personal amounts: federal $16,452 (reduced above $181,440 of net income to $14,829 at $258,482), Manitoba $15,780 (reduced above $200,000 of net income, nil at $400,000).</p>
+        </section>
 
-                    <article class="bracket-table">
-                        <h3>Manitoba Tax Brackets</h3>
-                        <table>
-                            <tr>
-                                <td>Up to $47,000</td>
-                                <td>10.8%</td>
-                            </tr>
-                            <tr>
-                                <td>$47,000 - $100,000</td>
-                                <td>12.75%</td>
-                            </tr>
-                            <tr>
-                                <td>Over $100,000</td>
-                                <td>17.4%</td>
-                            </tr>
-                        </table>
-                        <p class="table-note">Manitoba basic personal amount credit: $15,000.</p>
-                    </article>
-
-                    <article class="bracket-table">
-                        <h3>Corporate Tax Rates</h3>
-                        <table>
-                            <tr>
-                                <td>Small Business (Active)</td>
-                                <td>11%</td>
-                            </tr>
-                            <tr>
-                                <td>Investment Income</td>
-                                <td>50.67%</td>
-                            </tr>
-                        </table>
-                    </article>
-
-                    <article class="bracket-table">
-                        <h3>2025 Contribution Limits</h3>
-                        <table>
-                            <tr>
-                                <td>CPP Employee Base</td>
-                                <td>$3,867.50</td>
-                            </tr>
-                            <tr>
-                                <td>CPP Employee CPP2</td>
-                                <td>$188.00</td>
-                            </tr>
-                            <tr>
-                                <td>CPP Self-Employed</td>
-                                <td>$8,111.00</td>
-                            </tr>
-                            <tr>
-                                <td>EI Maximum</td>
-                                <td>$1,049.12</td>
-                            </tr>
-                        </table>
-                    </article>
-                </div>
-            </section>
-
-            <section class="section-card notes">
-                <h2>Important Notes</h2>
+        <section class="closing">
+            <div class="next-steps">
+                <h2>Where a planner can help</h2>
+                <dl>
+                    <div>
+                        <dt>Salary and dividend mix</dt>
+                        <dd>Balance CPP, RRSP room and your marginal rate instead of defaulting to one or the other.</dd>
+                    </div>
+                    <div>
+                        <dt>Putting retained earnings to work</dt>
+                        <dd>IPPs, corporate class investments and family trusts can tie that money to long-term goals.</dd>
+                    </div>
+                    <div>
+                        <dt>Cash flow you can live on</dt>
+                        <dd>Account for insurance, practice costs and time off before settling on a draw.</dd>
+                    </div>
+                </dl>
+            </div>
+            <aside class="notes">
+                <h2>What this estimate leaves out</h2>
                 <ul>
-                    <li>This calculator provides estimates based on 2025 tax rates for Manitoba.</li>
-                    <li>Corporate calculation assumes the small business deduction applies (11% rate).</li>
-                    <li>Personal tax includes federal tax, Manitoba provincial tax, CPP, and optional EI.</li>
-                    <li>Corporate scenario shows salary drawn plus retained earnings inside the corporation.</li>
-                    <li>Additional tax applies when distributing retained earnings as dividends.</li>
-                    <li>Consult a tax professional for personalized advice and comprehensive planning.</li>
-                    <li>Calculator does not consider additional deductions, RRSP contributions, or other advanced strategies.</li>
+                    <li>It uses 2026 Manitoba rates and assumes the small business deduction applies (9% on the first $500,000 of active business income, 27% above).</li>
+                    <li>Personal tax covers federal, Manitoba, CPP and optional EI.</li>
+                    <li>Retained earnings are taxed again when paid out as dividends. That second layer isn't shown here.</li>
+                    <li>RRSP contributions, other deductions and advanced strategies aren't included.</li>
+                    <li>Talk to a tax professional before making decisions based on these figures.</li>
                 </ul>
-            </section>
+            </aside>
+        </section>
+    </main>
 
-            <section class="section-card planner-tips">
-                <h2>Planner Insights & Next Steps</h2>
-                <div class="tips-grid">
-                    <article class="tip">
-                        <h3>Optimize remuneration mix</h3>
-                        <p>Blend salary and dividends to manage CPP exposure, RRSP contribution room, and personal marginal rates.</p>
-                    </article>
-                    <article class="tip">
-                        <h3>Fund future goals</h3>
-                        <p>Consider IPPs, corporate class investments, or family trusts to align retained earnings with long-term objectives.</p>
-                    </article>
-                    <article class="tip">
-                        <h3>Stress-test cash flow</h3>
-                        <p>Layer in insurance costs, practice expenses, and planned time off to validate that lifestyle draws remain sustainable.</p>
-                    </article>
-                </div>
-            </section>
-        </main>
-    </div>
+    <footer class="site-footer">
+        <div class="wrap">
+            <img src="images/W.svg" alt="" width="32" height="22">
+            <span>The Wealth Planning Group Inc. Climb higher. Reach further.</span>
+        </div>
+    </footer>
+
     <script src="script/app.js"></script>
+    <script src="script/vendor/jspdf.umd.min.js"></script>
+    <script src="script/logo-data.js"></script>
+    <script src="script/pdf.js"></script>
 </body>
 </html>
